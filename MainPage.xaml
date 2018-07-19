@@ -9,6 +9,89 @@
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
     <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+        <!--
+        <Border Background="Red" Width="30" Height="30">
+            <TextBlock Text="3" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Border>
+        -->
+        <CommandBar>
+            <AppBarToggleButton
+                x:Name="SideToggleButton"
+                Width="120"
+                Icon="Shuffle"
+                Label="Enable Set Side"
+                Checked="SideToggleButton_Checked"
+                Unchecked="SideToggleButton_Unchecked"/>
+            <AppBarToggleButton
+                x:Name="CellToggleButton"
+                Width="120"
+                Icon="Add"
+                Label="Enable Set Cell"
+                Checked="CellToggleButton_Checked"
+                Unchecked="CellToggleButton_Unchecked"/>
+        </CommandBar>
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto">
+            <Grid x:Name="RootGrid">
+                <!--
+                <Grid.RowDefinitions>
+                    <RowDefinition/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
 
+                <Canvas Grid.Row="1" Grid.Column="1" Width="50" Height="50" Background="Black">
+                </Canvas>
+                <Canvas Grid.Row="1" Grid.Column="2" Width="50" Height="50" Background="Green">
+                </Canvas>
+                <Canvas Grid.Row="1" Grid.Column="3" Width="50" Height="50" Background="Black">
+                </Canvas>
+
+                <Canvas Grid.Row="2" Grid.Column="1" Width="50" Height="50" Background="Green">
+                </Canvas>
+                <Canvas Grid.Row="2" Grid.Column="2" Width="50" Height="50" Background="Green">
+                    <Rectangle Canvas.ZIndex="10" Canvas.Left="-25" Canvas.Top="-25" Width="100" Height="100" Fill="Yellow"/>
+                </Canvas>
+                <Canvas Grid.Row="2" Grid.Column="3" Width="50" Height="50" Background="Green">
+                </Canvas>
+
+                <Canvas Grid.Row="3" Grid.Column="1" Width="50" Height="50" Background="Black">
+                </Canvas>
+                <Canvas Grid.Row="3" Grid.Column="2" Width="50" Height="50" Background="Green">
+                </Canvas>
+                <Canvas Canvas.ZIndex="9" Grid.Row="3" Grid.Column="3" Width="50" Height="50" Background="Black">
+                </Canvas>
+                -->
+
+                <!--
+                <Canvas Width="150" Height="150" Background="Green">
+                    <Border Canvas.ZIndex="1" Canvas.Left="0" Canvas.Top="0" Width="50" Height="50" Background="Black"/>
+                    <Border Canvas.ZIndex="1" Canvas.Left="100" Canvas.Top="0" Width="50" Height="50" Background="Black"/>
+                    <Border Canvas.ZIndex="1" Canvas.Left="0" Canvas.Top="100" Width="50" Height="50" Background="Black"/>
+                    <Border Canvas.ZIndex="1" Canvas.Left="100" Canvas.Top="100" Width="50" Height="50" Background="Black"/>
+
+                    <Border Canvas.ZIndex="0" Canvas.Left="25" Canvas.Top="25" Width="100" Height="100" Background="Yellow"/>
+
+                    <Border Canvas.ZIndex="1" Canvas.Left="50" Canvas.Top="0" Width="50" Height="50" Background="SkyBlue"/>
+                    <Border Canvas.ZIndex="1" Canvas.Left="0" Canvas.Top="50" Width="50" Height="50" Background="SkyBlue" Visibility="Collapsed"/>
+                    <Border Canvas.ZIndex="1" Canvas.Left="100" Canvas.Top="50" Width="50" Height="50" Background="SkyBlue" Visibility="Collapsed"/>
+                    <Border Canvas.ZIndex="1" Canvas.Left="50" Canvas.Top="100" Width="50" Height="50" Background="SkyBlue" Visibility="Collapsed"/>
+                </Canvas>
+                -->
+
+            </Grid>
+        </ScrollViewer>
     </Grid>
 </Page>
