@@ -55,8 +55,20 @@
         </CommandBar>
         <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" Background="SkyBlue">
             <Grid>
-                <Canvas x:Name="RootCanvas" Margin="50,50,50,50" Visibility="Collapsed"/>
-                <TextBox x:Name="HtmlResult" Visibility="Collapsed" TextWrapping="Wrap" HorizontalAlignment="Stretch"/>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+                <Grid Width="600">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="PatternBox"/>
+                    <Button x:Name="SearchButton" Grid.Column="1" Content="Search" Click="SearchButton_Click"/>
+                </Grid>
+                <Canvas x:Name="RootCanvas" Grid.Row="1" Margin="50,50,50,50" Visibility="Collapsed"/>
+                <TextBox x:Name="HtmlResult" Grid.Row="1" Visibility="Collapsed" TextWrapping="Wrap" HorizontalAlignment="Stretch"/>
             </Grid>
         </ScrollViewer>
         <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" Visibility="Collapsed">

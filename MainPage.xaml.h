@@ -122,7 +122,7 @@ namespace SlitherLink
 
         int mRow;
         int mCol;
-        Concurrency::task<void> ReadFile(Windows::Storage::StorageFile^ file);
+
         void Init(int row, int col);
 
         void Grid_PointerPressed(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e);
@@ -130,6 +130,8 @@ namespace SlitherLink
         void Grid_PointerEntered(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e);
         void Grid_Tapped(Platform::Object^ sender, Windows::UI::Xaml::Input::TappedRoutedEventArgs^ e);
         void Grid_RightTapped(Platform::Object^ sender, Windows::UI::Xaml::Input::RightTappedRoutedEventArgs^ e);
+
+        Windows::UI::Xaml::Media::Geometry^ PathMarkupToGeometry(Platform::String^ pathMarkup);
 
         void SetInside(Windows::UI::Xaml::Controls::Border^ item);
         void SetOutside(Windows::UI::Xaml::Controls::Border^ item);
@@ -143,18 +145,24 @@ namespace SlitherLink
         void Update(Platform::Object^ sender, bool isLeft);
         void UpdateCell(Windows::UI::Xaml::Controls::Border^ item, bool isLeft);
         void UpdateSide(Windows::UI::Xaml::Controls::Border^ item, bool isLeft);
-        //Windows::Foundation::EventRegistrationToken m_PointerEntered;
-        //Windows::Foundation::EventRegistrationToken m_Tapped;
-        //Windows::Foundation::EventRegistrationToken m_RightTapped;
 
         void SideToggleButton_Checked(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void SideToggleButton_Unchecked(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void CellToggleButton_Checked(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void CellToggleButton_Unchecked(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
-        void OpenFileButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
-        Windows::UI::Xaml::Media::Geometry^ PathMarkupToGeometry(Platform::String^ pathMarkup);
 
+        void OpenFileButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
 
         void LoadFromUrlButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+
+        Concurrency::task<void> ReadTextFile(Windows::Storage::StorageFile^ file);
+        Concurrency::task<void> ReadHtmlFile(Windows::Storage::StorageFile^ file);
+
+        std::wstring StringToWstring(const std::string& str);
+        std::string WstringToString(const std::wstring & wstr);
+        std::vector<std::string> split(std::string strtem, char a);
+        
+        std::string mHtmlContent;
+        void SearchButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
     };
 }

@@ -5,6 +5,9 @@
 
 #include "pch.h"
 #include <pplawait.h>
+#include <regex>
+#include <string>
+#include <locale.h>
 #include "MainPage.xaml.h"
 
 using namespace SlitherLink;
@@ -66,6 +69,20 @@ https://stackoverflow.com/questions/50511876/how-to-set-bitmapicon-or-pathicon-c
 https://stackoverflow.com/questions/25188349/how-to-set-pathicon-from-code-behind
 
 https://docs.microsoft.com/zh-tw/windows/uwp/networking/httpclient
+
+https://msdn.microsoft.com/en-us/library/bb982382.aspx
+https://blog.csdn.net/fengbingchun/article/details/54835571
+
+https://www.cnblogs.com/SunboyL/archive/2013/03/31/stringandwstring.html
+https://gist.github.com/1901/5684151
+https://blog.csdn.net/ghevinn/article/details/9825727
+https://creatorlxd.github.io/2017/11/05/string-and-wstring/
+
+https://docs.microsoft.com/zh-tw/dotnet/standard/base-types/backreference-constructs-in-regular-expressions
+https://docs.microsoft.com/zh-tw/dotnet/standard/base-types/regular-expression-language-quick-reference
+
+https://blog.csdn.net/mycwq/article/details/18838151
+http://tommyjswu-blog.logdown.com/posts/726230-cpp11-regex-expression
 */
 
 /*
@@ -730,7 +747,7 @@ void SlitherLink::MainPage::CellToggleButton_Unchecked(Platform::Object^ sender,
 }
 
 
-task<void> SlitherLink::MainPage::ReadFile(StorageFile^ file)
+task<void> SlitherLink::MainPage::ReadTextFile(StorageFile^ file)
 {
     IRandomAccessStream^ stream = co_await file->OpenReadAsync();
     myLogW(LOG_INFO, LTAG L"------------- stream->Size = %llu -------------", stream->Size);
@@ -782,6 +799,52 @@ task<void> SlitherLink::MainPage::ReadFile(StorageFile^ file)
 }
 
 
+task<void> SlitherLink::MainPage::ReadHtmlFile(StorageFile^ file)
+{
+    IRandomAccessStream^ stream = co_await file->OpenReadAsync();
+    myLogW(LOG_INFO, LTAG L"------------- stream->Size = %llu -------------", stream->Size);
+    DataReader^ reader = ref new DataReader(stream->GetInputStreamAt(0));
+
+    unsigned int numBytes = co_await reader->LoadAsync(stream->Size);
+    myLogW(LOG_INFO, LTAG L"------------- numBytes = %u -------------", numBytes);
+
+    String^ content = reader->ReadString(numBytes);
+    this->Dispatcher->RunAsync(CoreDispatcherPriority::Normal, ref new DispatchedHandler([this, content]() {
+        
+        //HtmlResult->Visibility = Windows::UI::Xaml::Visibility::Visible;
+        //HtmlResult->Text = content;
+        mHtmlContent = WstringToString(content->Data());
+        myLog(LOG_INFO, TAG "mHtmlContent.length() = %u", mHtmlContent.length());
+
+#if false
+#if true
+        std::string str = WstringToString(content->Data());
+#else
+        std::wstring wstr(content->Data());
+        std::string str;
+        size_t size;
+        str.resize(wstr.length());
+        wcstombs_s(&size, &str[0], str.size() + 1, wstr.c_str(), wstr.size());
+#endif
+        myLog(LOG_INFO, TAG "str.length() = %u", str.length());
+        //std::string pattern{ "(?<=name=\"w\" value=\")[0-9]*(?=\")" };
+        //std::string pattern{ "name=\"w\" value=\"\\k\\d*(?=\")" };
+        std::string pattern{ "name=\"w" };
+        std::regex re(pattern);
+
+        std::smatch results;
+
+        std::regex_search(str, results, re);
+        //for (auto x : results)
+        for (auto x = results.begin(); x != results.end(); x++)
+        {
+            myLog(LOG_INFO, TAG "x: %s", x->str());
+        }
+#endif
+    }));
+}
+
+
 void SlitherLink::MainPage::OpenFileButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
     FileOpenPicker^ picker = ref new FileOpenPicker();
@@ -791,7 +854,7 @@ void SlitherLink::MainPage::OpenFileButton_Click(Platform::Object^ sender, Windo
     {
         if (file != nullptr)
         {
-            create_task(ReadFile(file)).then([this]() {
+            create_task(ReadTextFile(file)).then([this]() {
                 int row = mMap->Size;
                 if (row < 0)
                 {
@@ -828,6 +891,36 @@ Geometry^ SlitherLink::MainPage::PathMarkupToGeometry(String^ pathMarkup)
 
 void SlitherLink::MainPage::LoadFromUrlButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
+#if true
+    FileOpenPicker^ picker = ref new FileOpenPicker();
+    picker->FileTypeFilter->Append(".html");
+
+    create_task(picker->PickSingleFileAsync()).then([this](StorageFile^ file)
+    {
+        if (file != nullptr)
+        {
+            create_task(ReadHtmlFile(file)).then([this]() {
+#if false
+                int row = mMap->Size;
+                if (row < 0)
+                {
+                    return;
+                }
+                int col = mMap->GetAt(0)->Size;
+                if (col < 0)
+                {
+                    return;
+                }
+                myLogW(LOG_DEBUG, LTAG L"mMap: row = %d, col = %d", row, col);
+
+                this->Dispatcher->RunAsync(CoreDispatcherPriority::Normal, ref new DispatchedHandler([this, row, col]() {
+                    //Init(row, col);
+                }));
+#endif
+            });
+        }
+    });
+#else
     Uri^ uri = ref new Uri(mUrl);
     create_task(mHttpClient->GetAsync(uri)).then([this](HttpResponseMessage^ response) {
         create_task(response->Content->ReadAsStringAsync()).then([this](String^ responseBodyAsText) {
@@ -836,4 +929,141 @@ void SlitherLink::MainPage::LoadFromUrlButton_Click(Platform::Object^ sender, Wi
             }));
         });
     });
+#endif
+}
+
+
+std::wstring SlitherLink::MainPage::StringToWstring(const std::string& str)
+{
+    std::wstring wstr;
+    size_t size;
+    wstr.resize(str.length());
+    mbstowcs_s(&size, &wstr[0], wstr.size() + 1, str.c_str(), str.size());
+    return wstr;
+}
+
+
+std::string SlitherLink::MainPage::WstringToString(const std::wstring & wstr)
+{
+    std::string str;
+    size_t size;
+    str.resize(wstr.length());
+    wcstombs_s(&size, &str[0], str.size() + 1, wstr.c_str(), wstr.size());
+    return str;
+}
+
+
+std::vector<std::string> SlitherLink::MainPage::split(std::string strtem, char a)
+{
+    std::vector<std::string> strvec;
+
+    std::string::size_type pos1, pos2;
+    pos2 = strtem.find(a);
+    pos1 = 0;
+    while (std::string::npos != pos2)
+    {
+        strvec.push_back(strtem.substr(pos1, pos2 - pos1));
+
+        pos1 = pos2 + 1;
+        pos2 = strtem.find(a, pos1);
+    }
+    strvec.push_back(strtem.substr(pos1));
+    return strvec;
+}
+
+void SlitherLink::MainPage::SearchButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+{
+    /*
+    WIDTH=$(grep -oP "(?<=name=\"w\" value=\")[0-9]*(?=\")" ${HTML_FILE})
+    HEIGHT=$(grep -oP "(?<=name=\"h\" value=\")[0-9]*(?=\")" ${HTML_FILE})
+    SYMBOL="_"
+
+    echo "${HEIGHT} ${WIDTH}"
+    grep -oP "(?<=<td align=\"center\" )>[0-3]?<(?=/td>)" ${HTML_FILE} | awk -v sym=${SYMBOL} -v w=${WIDTH} -F'[><]' '{ if ($2 == "") printf sym; else printf "%s", $2; if (NR % w == 0) printf "\n";}'
+    */
+    String^ patternText = PatternBox->Text;
+    if (patternText->IsEmpty())
+    {
+        myLogW(LOG_WARN, LTAG L"patternText is empty");
+        return;
+    }
+    if (!mHtmlContent.empty())
+    {
+        
+        //std::string pattern{ "(?<=name=\"w\" value=\")[0-9]*(?=\")" };
+        //std::string pattern{ "name=\"w\" value=\"\\k\\d*(?=\")" };
+        try {
+            std::string pattern(WstringToString(patternText->Data()));
+            std::regex re(pattern);
+
+            std::smatch matchs;
+            std::ssub_match subMatch;
+            std::string str(mHtmlContent);
+            myLog(LOG_INFO, TAG "str.length() = %u", str.length());
+
+#if false
+            std::vector<std::string> lines = split(str, '\n');
+            myLog(LOG_INFO, TAG "lines.size() = %u", lines.size());
+            
+            for (int i = 0; i < lines.size(); i++)
+            {
+                auto line = lines.at(i);
+                myLog(LOG_INFO, TAG "------------ line:%d len = %u ----------------", i, line.length());
+                while (std::regex_search(line, matchs, re))
+                {
+                    myLog(LOG_INFO, TAG "----------------------------");
+                    myLog(LOG_INFO, TAG "matchs.size() = %u", matchs.size());
+                    myLog(LOG_INFO, TAG "matchs.length() = %u", matchs.length());
+
+                    for (auto &match : matchs)
+                    {
+                        subMatch = match;
+                        myLog(LOG_INFO, TAG "match: %s", subMatch.str());
+                    }
+
+                    line = matchs.suffix().str();
+                    myLog(LOG_INFO, TAG "line.length() = %u", line.length());
+                }
+            }
+#else
+            while (std::regex_search(str, matchs, re))
+            {
+                myLog(LOG_INFO, TAG "----------------------------");
+                myLog(LOG_INFO, TAG "matchs.size() = %u", matchs.size());
+                myLog(LOG_INFO, TAG "matchs.length() = %u", matchs.length());
+
+#if true
+                for (auto &match : matchs)
+                {
+                    subMatch = match;
+                    myLog(LOG_INFO, TAG "match: %s", subMatch.str());
+                }
+#else
+                for (auto match = matchs.begin(); match != matchs.end(); match++)
+                {
+                    myLog(LOG_INFO, TAG "match: %s", match->str());
+                }
+#endif
+                str = matchs.suffix().str();
+                myLog(LOG_INFO, TAG "str.length() = %u", str.length());
+            }
+#endif
+        }
+        catch (const std::regex_error& e)
+        {
+            myLog(LOG_ERROR, TAG "regex_error, Exception: %s", e.what());
+            if (e.code() == std::regex_constants::error_brack)
+            {
+                myLog(LOG_ERROR, TAG "The code was error_brack");
+            }
+        }
+        catch (Exception^ e)
+        {
+            myLogW(LOG_ERROR, LTAG L"search fail, Exception: %s", e->Message->Data());
+        }
+    }
+    else
+    {
+        myLogW(LOG_WARN, LTAG L"mHtmlContent is empty");
+    }
 }
