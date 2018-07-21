@@ -118,8 +118,7 @@ MainPage::MainPage()
     mHttpFilter->CacheControl->ReadBehavior = HttpCacheReadBehavior::NoCache;
     mHttpFilter->CacheControl->WriteBehavior = HttpCacheWriteBehavior::NoCache;
     mHttpClient = ref new HttpClient(mHttpFilter);
-    
-    
+
     auto defaultHeaders = mHttpClient->DefaultRequestHeaders;
 
     //defaultHeaders->Append("Connection", "keep-alive");
@@ -810,11 +809,13 @@ task<void> SlitherLink::MainPage::ReadHtmlFile(StorageFile^ file)
 
     String^ content = reader->ReadString(numBytes);
     this->Dispatcher->RunAsync(CoreDispatcherPriority::Normal, ref new DispatchedHandler([this, content]() {
-        
+
         //HtmlResult->Visibility = Windows::UI::Xaml::Visibility::Visible;
         //HtmlResult->Text = content;
-        mHtmlContent = WstringToString(content->Data());
-        myLog(LOG_INFO, TAG "mHtmlContent.length() = %u", mHtmlContent.length());
+        mHtmlContent = content;
+        mHtmlContentStdWStr = content->Data();
+        mHtmlContentStdStr = WstringToString(mHtmlContentStdWStr);
+        myLog(LOG_INFO, TAG "mHtmlContent.length() = %u", mHtmlContentStdStr.length());
 
 #if false
 #if true
@@ -953,7 +954,7 @@ std::string SlitherLink::MainPage::WstringToString(const std::wstring & wstr)
 }
 
 
-std::vector<std::string> SlitherLink::MainPage::split(std::string strtem, char a)
+std::vector<std::string> SlitherLink::MainPage::SplitString(std::string strtem, char a)
 {
     std::vector<std::string> strvec;
 
@@ -971,6 +972,26 @@ std::vector<std::string> SlitherLink::MainPage::split(std::string strtem, char a
     return strvec;
 }
 
+
+std::vector<std::wstring> SlitherLink::MainPage::SplitWString(std::wstring strtem, wchar_t a)
+{
+    std::vector<std::wstring> strvec;
+
+    std::string::size_type pos1, pos2;
+    pos2 = strtem.find(a);
+    pos1 = 0;
+    while (std::wstring::npos != pos2)
+    {
+        strvec.push_back(strtem.substr(pos1, pos2 - pos1));
+
+        pos1 = pos2 + 1;
+        pos2 = strtem.find(a, pos1);
+    }
+    strvec.push_back(strtem.substr(pos1));
+    return strvec;
+}
+
+
 void SlitherLink::MainPage::SearchButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
     /*
@@ -987,28 +1008,72 @@ void SlitherLink::MainPage::SearchButton_Click(Platform::Object^ sender, Windows
         myLogW(LOG_WARN, LTAG L"patternText is empty");
         return;
     }
-    if (!mHtmlContent.empty())
+    if (!mHtmlContentStdWStr.empty())
     {
-        
         //std::string pattern{ "(?<=name=\"w\" value=\")[0-9]*(?=\")" };
         //std::string pattern{ "name=\"w\" value=\"\\k\\d*(?=\")" };
-        try {
-            std::string pattern(WstringToString(patternText->Data()));
-            std::regex re(pattern);
+        //"(?<=name=\"w\" value=\")[0-9]*(?=\")"
+        //(?<=name="w" value=")[0-9]*(?=")
+        //(?:name="w" value=")[0-9]*(?=")
 
-            std::smatch matchs;
-            std::ssub_match subMatch;
-            std::string str(mHtmlContent);
-            myLog(LOG_INFO, TAG "str.length() = %u", str.length());
+        //<td align="center" ></td>
+        //<td align="center" >\d*(?=</td>)
+#if true
+        std::wstring pattern;
+        std::wregex regex;
+        std::wsmatch matchs;
+        std::wstring str(mHtmlContentStdWStr);
+
+        // get width
+        pattern.assign(L"name=\"w\" value=\"\\d+(?=\")");
+        regex.assign(pattern);
+        if (std::regex_search(str, matchs, regex))
+        {
+            mCol = std::stoi(matchs[0].str().substr(wcslen(L"name=\"w\" value=\"")).c_str());
+            myLog(LOG_INFO, TAG "mCol = %d", mCol);
+        }
+
+        // get height
+        pattern.assign(L"name=\"h\" value=\"\\d+(?=\")");
+        regex.assign(pattern);
+        if (std::regex_search(str, matchs, regex))
+        {
+            mRow = std::stoi(matchs[0].str().substr(wcslen(L"name=\"h\" value=\"")).c_str());
+            myLog(LOG_INFO, TAG "mRow = %d", mRow);
+        }
+
+        // get map
+        pattern.assign(L"<td align=\"center\" >\\d?<(?=/td>)");
+        regex.assign(pattern);
+        int count = 0;
+        int len = wcslen(L"<td align=\"center\" >");
+        while (std::regex_search(str, matchs, regex))
+        {
+            for (auto match : matchs)
+            {
+                myLogW(LOG_INFO, LTAG L"[%d] match: %s", count++, match.str().substr(len).c_str());
+            }
+            str = matchs.suffix();
+        }
+#else
+        try {
+            std::wstring pattern(patternText->Data());
+            std::wregex re(pattern);
+
+            std::wsmatch matchs;
+            std::wssub_match subMatch;
+            std::wstring str(mHtmlContentStdWStr);
+            myLogW(LOG_INFO, LTAG L"str.length() = %u", str.length());
 
 #if false
-            std::vector<std::string> lines = split(str, '\n');
+            std::vector<std::wstring> lines = SplitWString(str, '\n');
             myLog(LOG_INFO, TAG "lines.size() = %u", lines.size());
-            
+
             for (int i = 0; i < lines.size(); i++)
             {
                 auto line = lines.at(i);
                 myLog(LOG_INFO, TAG "------------ line:%d len = %u ----------------", i, line.length());
+
                 while (std::regex_search(line, matchs, re))
                 {
                     myLog(LOG_INFO, TAG "----------------------------");
@@ -1018,34 +1083,43 @@ void SlitherLink::MainPage::SearchButton_Click(Platform::Object^ sender, Windows
                     for (auto &match : matchs)
                     {
                         subMatch = match;
-                        myLog(LOG_INFO, TAG "match: %s", subMatch.str());
+                        myLogW(LOG_INFO, LTAG L"match: %s", subMatch.str().c_str());
                     }
 
                     line = matchs.suffix().str();
-                    myLog(LOG_INFO, TAG "line.length() = %u", line.length());
+                    myLogW(LOG_INFO, LTAG L"line.length() = %u", line.length());
                 }
+
             }
 #else
+            int count = 0;
             while (std::regex_search(str, matchs, re))
             {
-                myLog(LOG_INFO, TAG "----------------------------");
-                myLog(LOG_INFO, TAG "matchs.size() = %u", matchs.size());
-                myLog(LOG_INFO, TAG "matchs.length() = %u", matchs.length());
+                myLogW(LOG_INFO, LTAG L"----------------------------");
+                //myLogW(LOG_INFO, LTAG L"matchs.size() = %u", matchs.size());
+                //myLogW(LOG_INFO, LTAG L"matchs.length() = %u", matchs.length());
 
-#if true
+#if false
                 for (auto &match : matchs)
                 {
                     subMatch = match;
-                    myLog(LOG_INFO, TAG "match: %s", subMatch.str());
+                    myLogW(LOG_INFO, LTAG L"match: %s", subMatch.str());
                 }
-#else
+#elif false
                 for (auto match = matchs.begin(); match != matchs.end(); match++)
                 {
-                    myLog(LOG_INFO, TAG "match: %s", match->str());
+                    myLogW(LOG_INFO, LTAG L"match: %s", match->str());
+                }
+#else
+                for (auto match : matchs)
+                {
+                    myLogW(LOG_INFO, LTAG L"[%d]match: %s", count, match.str().c_str());
+                    count++;
                 }
 #endif
-                str = matchs.suffix().str();
-                myLog(LOG_INFO, TAG "str.length() = %u", str.length());
+                //str = matchs.suffix().str();
+                str = matchs.suffix();
+                //myLogW(LOG_INFO, LTAG L"str.length() = %u", str.length());
             }
 #endif
         }
@@ -1061,6 +1135,7 @@ void SlitherLink::MainPage::SearchButton_Click(Platform::Object^ sender, Windows
         {
             myLogW(LOG_ERROR, LTAG L"search fail, Exception: %s", e->Message->Data());
         }
+#endif
     }
     else
     {

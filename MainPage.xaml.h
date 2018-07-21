@@ -160,9 +160,12 @@ namespace SlitherLink
 
         std::wstring StringToWstring(const std::string& str);
         std::string WstringToString(const std::wstring & wstr);
-        std::vector<std::string> split(std::string strtem, char a);
+        std::vector<std::string> SplitString(std::string strtem, char a);
+        std::vector<std::wstring> SplitWString(std::wstring strtem, wchar_t a);
         
-        std::string mHtmlContent;
+        Platform::String^ mHtmlContent;
+        std::string mHtmlContentStdStr;
+        std::wstring mHtmlContentStdWStr;
         void SearchButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
     };
 }
