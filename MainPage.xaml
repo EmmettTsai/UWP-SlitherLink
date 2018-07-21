@@ -13,11 +13,6 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition/>
         </Grid.RowDefinitions>
-        <!--
-        <Border Background="Red" Width="30" Height="30">
-            <TextBlock Text="3" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-        </Border>
-        -->
         <CommandBar>
             <AppBarToggleButton
                 x:Name="SideToggleButton"
@@ -59,90 +54,43 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition/>
                 </Grid.RowDefinitions>
-                <Grid Width="600">
+                <Grid HorizontalAlignment="Center" Margin="0,30,0,0">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <TextBox x:Name="PatternBox"/>
-                    <Button x:Name="SearchButton" Grid.Column="1" Content="Search" Click="SearchButton_Click"/>
+                    <TextBlock Text="PuzzleID : " FontSize="40"/>
+                    <TextBlock Grid.Column="1" x:Name="PuzzleID" FontSize="40"/>
                 </Grid>
-                <Canvas x:Name="RootCanvas" Grid.Row="1" Margin="50,50,50,50" Visibility="Collapsed"/>
-                <TextBox x:Name="HtmlResult" Grid.Row="1" Visibility="Collapsed" TextWrapping="Wrap" HorizontalAlignment="Stretch"/>
+                <Canvas x:Name="RootCanvas" Grid.Row="1" Margin="50,50,50,50"/>
             </Grid>
         </ScrollViewer>
-        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" Visibility="Collapsed">
-            <Grid x:Name="RootGrid">
-                <!--
-                <Grid.RowDefinitions>
-                    <RowDefinition/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition/>
-                </Grid.RowDefinitions>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition/>
-                </Grid.ColumnDefinitions>
 
-                <Canvas Grid.Row="1" Grid.Column="1" Width="50" Height="50" Background="Black">
+        <Border Grid.Row="1" Width="30" Height="10" Visibility="Collapsed">
+            <Viewbox>
+                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xe8bb;"/>
+            </Viewbox>
+        </Border>
+        <Border Grid.Row="1" Width="10" Height="30" Visibility="Collapsed">
+            <Viewbox>
+                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xe8bb;"/>
+            </Viewbox>
+        </Border>
+        <Border Grid.Row="1" Canvas.ZIndex="1" Canvas.Left="10" Canvas.Top="0" Width="30" Height="10" Background="Green" Visibility="Collapsed">
+            <Viewbox>
+                <Canvas Width="100" Height="100">
+                    <Path Width="100" Height="100" Stretch="Fill" StrokeThickness="15" StrokeLineJoin="Round" Stroke="Red" Data="F1 M 7.5,7.5L 92.5,92.5"/>
+                    <Path Width="100" Height="100" Stretch="Fill" StrokeThickness="15" StrokeLineJoin="Round" Stroke="Red" Data="F1 M 7.5,92.5L 92.5,7.5"/>
                 </Canvas>
-                <Canvas Grid.Row="1" Grid.Column="2" Width="50" Height="50" Background="Green">
+            </Viewbox>
+        </Border>
+        <Border Grid.Row="1" Canvas.ZIndex="1" Canvas.Left="10" Canvas.Top="0" Width="10" Height="30" Background="Green" Visibility="Collapsed">
+            <Viewbox>
+                <Canvas Width="100" Height="100">
+                    <Path Width="100" Height="100" Stretch="Fill" StrokeThickness="15" StrokeLineJoin="Round" Stroke="Red" Data="F1 M 7.5,7.5L 92.5,92.5"/>
+                    <Path Width="100" Height="100" Stretch="Fill" StrokeThickness="15" StrokeLineJoin="Round" Stroke="Red" Data="F1 M 7.5,92.5L 92.5,7.5"/>
                 </Canvas>
-                <Canvas Grid.Row="1" Grid.Column="3" Width="50" Height="50" Background="Black">
-                </Canvas>
-
-                <Canvas Grid.Row="2" Grid.Column="1" Width="50" Height="50" Background="Green">
-                </Canvas>
-                <Canvas Grid.Row="2" Grid.Column="2" Width="50" Height="50" Background="Green">
-                    <Rectangle Canvas.ZIndex="10" Canvas.Left="-25" Canvas.Top="-25" Width="100" Height="100" Fill="Yellow"/>
-                </Canvas>
-                <Canvas Grid.Row="2" Grid.Column="3" Width="50" Height="50" Background="Green">
-                </Canvas>
-
-                <Canvas Grid.Row="3" Grid.Column="1" Width="50" Height="50" Background="Black">
-                </Canvas>
-                <Canvas Grid.Row="3" Grid.Column="2" Width="50" Height="50" Background="Green">
-                </Canvas>
-                <Canvas Canvas.ZIndex="9" Grid.Row="3" Grid.Column="3" Width="50" Height="50" Background="Black">
-                </Canvas>
-                -->
-
-                <!--
-                <Canvas Width="50" Height="50" Background="Green">
-                    <Border Canvas.ZIndex="1" Canvas.Left="0" Canvas.Top="0" Width="10" Height="10" Background="Black"/>
-                    <Border Canvas.ZIndex="1" Canvas.Left="40" Canvas.Top="0" Width="10" Height="10" Background="Black"/>
-                    <Border Canvas.ZIndex="1" Canvas.Left="0" Canvas.Top="40" Width="10" Height="10" Background="Black"/>
-                    <Border Canvas.ZIndex="1" Canvas.Left="40" Canvas.Top="40" Width="10" Height="10" Background="Black"/>
-
-                    <Border Canvas.ZIndex="0" Canvas.Left="5" Canvas.Top="5" Width="40" Height="40" Background="Yellow"/>
-
-                    <Border Canvas.ZIndex="1" Canvas.Left="10" Canvas.Top="0" Width="30" Height="10">
-                        <Viewbox Width="30" Height="10" Stretch="Uniform">
-                            <Canvas Width="100" Height="100">
-                                <Path Width="100" Height="100" Stretch="Fill" StrokeThickness="15" StrokeLineJoin="Round" Stroke="Red" Data="F1 M 7.5,7.5L 92.5,92.5"/>
-                                <Path Width="100" Height="100" Stretch="Fill" StrokeThickness="15" StrokeLineJoin="Round" Stroke="Red" Data="F1 M 7.5,92.5L 92.5,7.5"/>
-                            </Canvas>
-                        </Viewbox>
-                    </Border>
-
-                    <Border Canvas.ZIndex="1" Canvas.Left="0" Canvas.Top="10" Width="10" Height="30">
-                        <Viewbox Width="10" Height="30" Stretch="Uniform">
-                            <Canvas Width="100" Height="100">
-                                <Path Width="100" Height="100" Stretch="Fill" StrokeThickness="15" StrokeLineJoin="Round" Stroke="Red" Data="F1 M 7.5,7.5L 92.5,92.5"/>
-                                <Path Width="100" Height="100" Stretch="Fill" StrokeThickness="15" StrokeLineJoin="Round" Stroke="Red" Data="F1 M 7.5,92.5L 92.5,7.5"/>
-                            </Canvas>
-                        </Viewbox>
-                    </Border>
-                    <Border Canvas.ZIndex="1" Canvas.Left="100" Canvas.Top="50" Width="50" Height="50" Background="SkyBlue" Visibility="Collapsed"/>
-                    <Border Canvas.ZIndex="1" Canvas.Left="50" Canvas.Top="100" Width="50" Height="50" Background="SkyBlue" Visibility="Collapsed"/>
-                </Canvas>
-                -->
-            </Grid>
-        </ScrollViewer>
+            </Viewbox>
+        </Border>
     </Grid>
 </Page>

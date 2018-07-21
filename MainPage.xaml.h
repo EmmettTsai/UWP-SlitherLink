@@ -116,10 +116,16 @@ namespace SlitherLink
         bool mEnableSetCell;
         bool mEnableSetSide;
 
+        Windows::UI::Xaml::Media::SolidColorBrush^ mInsideMarkColor;
+        Windows::UI::Xaml::Media::SolidColorBrush^ mOutsideMarkColor;
+        Windows::UI::Xaml::Media::SolidColorBrush^ mLineMarkColor;
+        Windows::UI::Xaml::Media::SolidColorBrush^ mCrossMarkColor;
+
         Platform::String^ mUrl;
         Windows::Web::Http::Filters::HttpBaseProtocolFilter^ mHttpFilter;
         Windows::Web::Http::HttpClient^ mHttpClient;
 
+        Platform::String^ mPuzzleID;
         int mRow;
         int mCol;
 
@@ -156,16 +162,8 @@ namespace SlitherLink
         void LoadFromUrlButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
 
         Concurrency::task<void> ReadTextFile(Windows::Storage::StorageFile^ file);
-        Concurrency::task<void> ReadHtmlFile(Windows::Storage::StorageFile^ file);
+        Concurrency::task<bool> ReadHtmlFile(Windows::Storage::StorageFile^ file);
 
-        std::wstring StringToWstring(const std::string& str);
-        std::string WstringToString(const std::wstring & wstr);
-        std::vector<std::string> SplitString(std::string strtem, char a);
-        std::vector<std::wstring> SplitWString(std::wstring strtem, wchar_t a);
-        
-        Platform::String^ mHtmlContent;
-        std::string mHtmlContentStdStr;
-        std::wstring mHtmlContentStdWStr;
-        void SearchButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+        bool ParseHtmlText(Platform::String^ content);
     };
 }

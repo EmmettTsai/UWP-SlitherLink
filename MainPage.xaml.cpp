@@ -113,6 +113,11 @@ MainPage::MainPage()
     mEnableSetSide = true;
     mEnableSetCell = false;
 
+    mInsideMarkColor = ref new SolidColorBrush(Colors::Green);
+    mOutsideMarkColor = ref new SolidColorBrush(Colors::SkyBlue);
+    mLineMarkColor = ref new SolidColorBrush(Colors::Black);
+    mCrossMarkColor = ref new SolidColorBrush(Colors::Red);
+
     mUrl = "https://www.puzzle-loop.com";
     mHttpFilter = ref new HttpBaseProtocolFilter();
     mHttpFilter->CacheControl->ReadBehavior = HttpCacheReadBehavior::NoCache;
@@ -517,7 +522,7 @@ void MainPage::SetInside(Windows::UI::Xaml::Controls::Border^ item)
     }
     auto info = (GridItemInfo^)item->Tag;
     info->State = GridItemState::InSide;
-    item->Background = ref new SolidColorBrush(Colors::Green);
+    item->Background = mInsideMarkColor;
 }
 
 
@@ -529,7 +534,7 @@ void MainPage::SetOutside(Windows::UI::Xaml::Controls::Border^ item)
     }
     auto info = (GridItemInfo^)item->Tag;
     info->State = GridItemState::OutSide;
-    item->Background = ref new SolidColorBrush(Colors::SkyBlue);
+    item->Background = mOutsideMarkColor;
 }
 
 
@@ -541,7 +546,8 @@ void MainPage::SetLine(Windows::UI::Xaml::Controls::Border^ item)
     }
     auto info = (GridItemInfo^)item->Tag;
     info->State = GridItemState::Line;
-    item->Background = ref new SolidColorBrush(Colors::Black);
+    item->Background = mLineMarkColor;
+    item->Child = nullptr;
 }
 
 
@@ -553,7 +559,15 @@ void MainPage::SetCross(Windows::UI::Xaml::Controls::Border^ item)
     }
     auto info = (GridItemInfo^)item->Tag;
     info->State = GridItemState::Cross;
-    item->Background = ref new SolidColorBrush(Colors::Red);
+    item->Background = ref new SolidColorBrush(Colors::Transparent);
+
+    auto viewBox = ref new Viewbox();
+    FontIcon^ icon = ref new FontIcon();
+    icon->FontFamily = ref new Windows::UI::Xaml::Media::FontFamily("Segoe MDL2 Assets");
+    icon->Glyph = L"\xE8BB";
+    icon->Foreground = mCrossMarkColor;
+    viewBox->Child = icon;
+    item->Child = viewBox;
 }
 
 
@@ -574,6 +588,7 @@ void MainPage::SetErase(Windows::UI::Xaml::Controls::Border^ item)
         {
             return;
         }
+        item->Child = nullptr;
         break;
     }
     info->State = GridItemState::None;
@@ -798,7 +813,7 @@ task<void> SlitherLink::MainPage::ReadTextFile(StorageFile^ file)
 }
 
 
-task<void> SlitherLink::MainPage::ReadHtmlFile(StorageFile^ file)
+task<bool> SlitherLink::MainPage::ReadHtmlFile(StorageFile^ file)
 {
     IRandomAccessStream^ stream = co_await file->OpenReadAsync();
     myLogW(LOG_INFO, LTAG L"------------- stream->Size = %llu -------------", stream->Size);
@@ -808,41 +823,8 @@ task<void> SlitherLink::MainPage::ReadHtmlFile(StorageFile^ file)
     myLogW(LOG_INFO, LTAG L"------------- numBytes = %u -------------", numBytes);
 
     String^ content = reader->ReadString(numBytes);
-    this->Dispatcher->RunAsync(CoreDispatcherPriority::Normal, ref new DispatchedHandler([this, content]() {
-
-        //HtmlResult->Visibility = Windows::UI::Xaml::Visibility::Visible;
-        //HtmlResult->Text = content;
-        mHtmlContent = content;
-        mHtmlContentStdWStr = content->Data();
-        mHtmlContentStdStr = WstringToString(mHtmlContentStdWStr);
-        myLog(LOG_INFO, TAG "mHtmlContent.length() = %u", mHtmlContentStdStr.length());
-
-#if false
-#if true
-        std::string str = WstringToString(content->Data());
-#else
-        std::wstring wstr(content->Data());
-        std::string str;
-        size_t size;
-        str.resize(wstr.length());
-        wcstombs_s(&size, &str[0], str.size() + 1, wstr.c_str(), wstr.size());
-#endif
-        myLog(LOG_INFO, TAG "str.length() = %u", str.length());
-        //std::string pattern{ "(?<=name=\"w\" value=\")[0-9]*(?=\")" };
-        //std::string pattern{ "name=\"w\" value=\"\\k\\d*(?=\")" };
-        std::string pattern{ "name=\"w" };
-        std::regex re(pattern);
-
-        std::smatch results;
-
-        std::regex_search(str, results, re);
-        //for (auto x : results)
-        for (auto x = results.begin(); x != results.end(); x++)
-        {
-            myLog(LOG_INFO, TAG "x: %s", x->str());
-        }
-#endif
-    }));
+    myLog(LOG_INFO, TAG "html content length = %u", content->Length());
+    co_return ParseHtmlText(content);
 }
 
 
@@ -892,7 +874,7 @@ Geometry^ SlitherLink::MainPage::PathMarkupToGeometry(String^ pathMarkup)
 
 void SlitherLink::MainPage::LoadFromUrlButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
-#if true
+#if false
     FileOpenPicker^ picker = ref new FileOpenPicker();
     picker->FileTypeFilter->Append(".html");
 
@@ -900,8 +882,12 @@ void SlitherLink::MainPage::LoadFromUrlButton_Click(Platform::Object^ sender, Wi
     {
         if (file != nullptr)
         {
-            create_task(ReadHtmlFile(file)).then([this]() {
-#if false
+            create_task(ReadHtmlFile(file)).then([this](bool result) {
+                if (!result)
+                {
+                    myLogW(LOG_WARN, LTAG L"LoadFromUrl ReadHtmlFile fail");
+                    return;
+                }
                 int row = mMap->Size;
                 if (row < 0)
                 {
@@ -915,9 +901,10 @@ void SlitherLink::MainPage::LoadFromUrlButton_Click(Platform::Object^ sender, Wi
                 myLogW(LOG_DEBUG, LTAG L"mMap: row = %d, col = %d", row, col);
 
                 this->Dispatcher->RunAsync(CoreDispatcherPriority::Normal, ref new DispatchedHandler([this, row, col]() {
-                    //Init(row, col);
+                    Init(row, col);
+                    PuzzleID->Text = mPuzzleID;
                 }));
-#endif
+
             });
         }
     });
@@ -926,7 +913,25 @@ void SlitherLink::MainPage::LoadFromUrlButton_Click(Platform::Object^ sender, Wi
     create_task(mHttpClient->GetAsync(uri)).then([this](HttpResponseMessage^ response) {
         create_task(response->Content->ReadAsStringAsync()).then([this](String^ responseBodyAsText) {
             this->Dispatcher->RunAsync(CoreDispatcherPriority::Normal, ref new DispatchedHandler([this, responseBodyAsText]() {
-                //HtmlResult->Text = responseBodyAsText;
+                if (ParseHtmlText(responseBodyAsText))
+                {
+                    int row = mMap->Size;
+                    if (row < 0)
+                    {
+                        return;
+                    }
+                    int col = mMap->GetAt(0)->Size;
+                    if (col < 0)
+                    {
+                        return;
+                    }
+                    myLogW(LOG_DEBUG, LTAG L"mMap: row = %d, col = %d", row, col);
+
+                    this->Dispatcher->RunAsync(CoreDispatcherPriority::Normal, ref new DispatchedHandler([this, row, col]() {
+                        Init(row, col);
+                        PuzzleID->Text = mPuzzleID;
+                    }));
+                }
             }));
         });
     });
@@ -934,211 +939,89 @@ void SlitherLink::MainPage::LoadFromUrlButton_Click(Platform::Object^ sender, Wi
 }
 
 
-std::wstring SlitherLink::MainPage::StringToWstring(const std::string& str)
+bool SlitherLink::MainPage::ParseHtmlText(Platform::String^ content)
 {
-    std::wstring wstr;
-    size_t size;
-    wstr.resize(str.length());
-    mbstowcs_s(&size, &wstr[0], wstr.size() + 1, str.c_str(), str.size());
-    return wstr;
-}
-
-
-std::string SlitherLink::MainPage::WstringToString(const std::wstring & wstr)
-{
-    std::string str;
-    size_t size;
-    str.resize(wstr.length());
-    wcstombs_s(&size, &str[0], str.size() + 1, wstr.c_str(), wstr.size());
-    return str;
-}
-
-
-std::vector<std::string> SlitherLink::MainPage::SplitString(std::string strtem, char a)
-{
-    std::vector<std::string> strvec;
-
-    std::string::size_type pos1, pos2;
-    pos2 = strtem.find(a);
-    pos1 = 0;
-    while (std::string::npos != pos2)
+    if (content == nullptr || content->IsEmpty())
     {
-        strvec.push_back(strtem.substr(pos1, pos2 - pos1));
-
-        pos1 = pos2 + 1;
-        pos2 = strtem.find(a, pos1);
+        return false;
     }
-    strvec.push_back(strtem.substr(pos1));
-    return strvec;
-}
 
+    std::wstring pattern;
+    std::wregex regex;
+    std::wsmatch matchs;
+    std::wstring str(content->Data());
 
-std::vector<std::wstring> SlitherLink::MainPage::SplitWString(std::wstring strtem, wchar_t a)
-{
-    std::vector<std::wstring> strvec;
-
-    std::string::size_type pos1, pos2;
-    pos2 = strtem.find(a);
-    pos1 = 0;
-    while (std::wstring::npos != pos2)
+    // get puzzle id
+    pattern.assign(L"Puzzle ID: [\\d,]+(?=</p>)");
+    regex.assign(pattern);
+    if (std::regex_search(str, matchs, regex))
     {
-        strvec.push_back(strtem.substr(pos1, pos2 - pos1));
-
-        pos1 = pos2 + 1;
-        pos2 = strtem.find(a, pos1);
-    }
-    strvec.push_back(strtem.substr(pos1));
-    return strvec;
-}
-
-
-void SlitherLink::MainPage::SearchButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
-{
-    /*
-    WIDTH=$(grep -oP "(?<=name=\"w\" value=\")[0-9]*(?=\")" ${HTML_FILE})
-    HEIGHT=$(grep -oP "(?<=name=\"h\" value=\")[0-9]*(?=\")" ${HTML_FILE})
-    SYMBOL="_"
-
-    echo "${HEIGHT} ${WIDTH}"
-    grep -oP "(?<=<td align=\"center\" )>[0-3]?<(?=/td>)" ${HTML_FILE} | awk -v sym=${SYMBOL} -v w=${WIDTH} -F'[><]' '{ if ($2 == "") printf sym; else printf "%s", $2; if (NR % w == 0) printf "\n";}'
-    */
-    String^ patternText = PatternBox->Text;
-    if (patternText->IsEmpty())
-    {
-        myLogW(LOG_WARN, LTAG L"patternText is empty");
-        return;
-    }
-    if (!mHtmlContentStdWStr.empty())
-    {
-        //std::string pattern{ "(?<=name=\"w\" value=\")[0-9]*(?=\")" };
-        //std::string pattern{ "name=\"w\" value=\"\\k\\d*(?=\")" };
-        //"(?<=name=\"w\" value=\")[0-9]*(?=\")"
-        //(?<=name="w" value=")[0-9]*(?=")
-        //(?:name="w" value=")[0-9]*(?=")
-
-        //<td align="center" ></td>
-        //<td align="center" >\d*(?=</td>)
-#if true
-        std::wstring pattern;
-        std::wregex regex;
-        std::wsmatch matchs;
-        std::wstring str(mHtmlContentStdWStr);
-
-        // get width
-        pattern.assign(L"name=\"w\" value=\"\\d+(?=\")");
-        regex.assign(pattern);
-        if (std::regex_search(str, matchs, regex))
-        {
-            mCol = std::stoi(matchs[0].str().substr(wcslen(L"name=\"w\" value=\"")).c_str());
-            myLog(LOG_INFO, TAG "mCol = %d", mCol);
-        }
-
-        // get height
-        pattern.assign(L"name=\"h\" value=\"\\d+(?=\")");
-        regex.assign(pattern);
-        if (std::regex_search(str, matchs, regex))
-        {
-            mRow = std::stoi(matchs[0].str().substr(wcslen(L"name=\"h\" value=\"")).c_str());
-            myLog(LOG_INFO, TAG "mRow = %d", mRow);
-        }
-
-        // get map
-        pattern.assign(L"<td align=\"center\" >\\d?<(?=/td>)");
-        regex.assign(pattern);
-        int count = 0;
-        int len = wcslen(L"<td align=\"center\" >");
-        while (std::regex_search(str, matchs, regex))
-        {
-            for (auto match : matchs)
-            {
-                myLogW(LOG_INFO, LTAG L"[%d] match: %s", count++, match.str().substr(len).c_str());
-            }
-            str = matchs.suffix();
-        }
-#else
-        try {
-            std::wstring pattern(patternText->Data());
-            std::wregex re(pattern);
-
-            std::wsmatch matchs;
-            std::wssub_match subMatch;
-            std::wstring str(mHtmlContentStdWStr);
-            myLogW(LOG_INFO, LTAG L"str.length() = %u", str.length());
-
-#if false
-            std::vector<std::wstring> lines = SplitWString(str, '\n');
-            myLog(LOG_INFO, TAG "lines.size() = %u", lines.size());
-
-            for (int i = 0; i < lines.size(); i++)
-            {
-                auto line = lines.at(i);
-                myLog(LOG_INFO, TAG "------------ line:%d len = %u ----------------", i, line.length());
-
-                while (std::regex_search(line, matchs, re))
-                {
-                    myLog(LOG_INFO, TAG "----------------------------");
-                    myLog(LOG_INFO, TAG "matchs.size() = %u", matchs.size());
-                    myLog(LOG_INFO, TAG "matchs.length() = %u", matchs.length());
-
-                    for (auto &match : matchs)
-                    {
-                        subMatch = match;
-                        myLogW(LOG_INFO, LTAG L"match: %s", subMatch.str().c_str());
-                    }
-
-                    line = matchs.suffix().str();
-                    myLogW(LOG_INFO, LTAG L"line.length() = %u", line.length());
-                }
-
-            }
-#else
-            int count = 0;
-            while (std::regex_search(str, matchs, re))
-            {
-                myLogW(LOG_INFO, LTAG L"----------------------------");
-                //myLogW(LOG_INFO, LTAG L"matchs.size() = %u", matchs.size());
-                //myLogW(LOG_INFO, LTAG L"matchs.length() = %u", matchs.length());
-
-#if false
-                for (auto &match : matchs)
-                {
-                    subMatch = match;
-                    myLogW(LOG_INFO, LTAG L"match: %s", subMatch.str());
-                }
-#elif false
-                for (auto match = matchs.begin(); match != matchs.end(); match++)
-                {
-                    myLogW(LOG_INFO, LTAG L"match: %s", match->str());
-                }
-#else
-                for (auto match : matchs)
-                {
-                    myLogW(LOG_INFO, LTAG L"[%d]match: %s", count, match.str().c_str());
-                    count++;
-                }
-#endif
-                //str = matchs.suffix().str();
-                str = matchs.suffix();
-                //myLogW(LOG_INFO, LTAG L"str.length() = %u", str.length());
-            }
-#endif
-        }
-        catch (const std::regex_error& e)
-        {
-            myLog(LOG_ERROR, TAG "regex_error, Exception: %s", e.what());
-            if (e.code() == std::regex_constants::error_brack)
-            {
-                myLog(LOG_ERROR, TAG "The code was error_brack");
-            }
-        }
-        catch (Exception^ e)
-        {
-            myLogW(LOG_ERROR, LTAG L"search fail, Exception: %s", e->Message->Data());
-        }
-#endif
+        mPuzzleID = ref new String(matchs[0].str().substr(wcslen(L"Puzzle ID: ")).c_str());
+        myLogW(LOG_INFO, LTAG L"mPuzzleID = %s", mPuzzleID->Data());
     }
     else
     {
-        myLogW(LOG_WARN, LTAG L"mHtmlContent is empty");
+        myLog(LOG_ERROR, TAG "search height fail");
+        return false;
     }
+
+    // get height
+    pattern.assign(L"name=\"h\" value=\"\\d+(?=\")");
+    regex.assign(pattern);
+    if (std::regex_search(str, matchs, regex))
+    {
+        mRow = std::stoi(matchs[0].str().substr(wcslen(L"name=\"h\" value=\"")).c_str());
+        myLog(LOG_INFO, TAG "mRow = %d", mRow);
+    }
+    else
+    {
+        myLog(LOG_ERROR, TAG "search height fail");
+        return false;
+    }
+
+    // get width
+    pattern.assign(L"name=\"w\" value=\"\\d+(?=\")");
+    regex.assign(pattern);
+    if (std::regex_search(str, matchs, regex))
+    {
+        mCol = std::stoi(matchs[0].str().substr(wcslen(L"name=\"w\" value=\"")).c_str());
+        myLog(LOG_INFO, TAG "mCol = %d", mCol);
+    }
+    else
+    {
+        myLog(LOG_ERROR, TAG "search width fail");
+        return false;
+    }
+
+    // get map
+    pattern.assign(L"<td align=\"center\" >\\d?<(?=/td>)");
+    regex.assign(pattern);
+    int count = 0;
+    int len = wcslen(L"<td align=\"center\" >");
+    for (int i = 0; i < mRow; i++)
+    {
+        auto arr = ref new Vector<byte>();
+        for (int j = 0; j < mCol; j++)
+        {
+            if (std::regex_search(str, matchs, regex))
+            {
+                char ch = matchs[0].str().substr(len, 1)[0];
+                myLog(LOG_DEBUG, TAG "search map at (%d, %d) is '%c'", i, j, ch);
+                if (ch == '<')
+                {
+                    ch = ' ';
+                }
+                arr->Append(ch);
+            }
+            else
+            {
+                myLog(LOG_ERROR, TAG "search map at (%d, %d) fail", i, j);
+                return false;
+            }
+            str = matchs.suffix();
+        }
+        mMap->Append(arr);
+    }
+    myLog(LOG_INFO, TAG "ParseHtmlText done");
+    return true;
 }
