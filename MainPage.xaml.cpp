@@ -246,8 +246,6 @@ void MainPage::Init(int row, int col)
     int cellSize = 30;
     mIndicatorState = IndicatorState::None;
 
-    //Windows::UI::ViewManagement::ApplicationView::GetForCurrentView()->SetDesiredBoundsMode(Windows::UI::ViewManagement::ApplicationViewBoundsMode::UseCoreWindow);
-
     /*
     * 2*row+1 x 2*col+1
     * dot:   (2*i, 2*j)
@@ -256,13 +254,6 @@ void MainPage::Init(int row, int col)
     * vLine: (2*(i+1), 2*j)
     *
     **/
-
-    //ColumnDefinition^ colDef = ref new ColumnDefinition();
-    //rowDef->Height = GridLength(30);
-    //rowDef->Height = GridLength::Auto;
-
-    //ref new Windows::UI::Xaml::Input::PointerEventHandler(this, &SlitherLink::MainPage::OnPointerEntered);
-    //m_PointerEntered = ref new Windows::UI::Xaml::Input::TappedEventHandler(this, &SlitherLink::MainPage::OnTapped);
 
     RootCanvas->Width = col * cellSize + (col + 1) * dotSize;
     RootCanvas->Height = row * cellSize + (row + 1) * dotSize;
@@ -284,8 +275,6 @@ void MainPage::Init(int row, int col)
             item->PointerEntered += ref new Windows::UI::Xaml::Input::PointerEventHandler(this, &SlitherLink::MainPage::Grid_PointerEntered);
             item->PointerPressed += ref new Windows::UI::Xaml::Input::PointerEventHandler(this, &SlitherLink::MainPage::Grid_PointerPressed);
             item->PointerReleased += ref new Windows::UI::Xaml::Input::PointerEventHandler(this, &SlitherLink::MainPage::Grid_PointerReleased);
-            item->Tapped += ref new Windows::UI::Xaml::Input::TappedEventHandler(this, &SlitherLink::MainPage::Grid_Tapped);
-            item->RightTapped += ref new Windows::UI::Xaml::Input::RightTappedEventHandler(this, &SlitherLink::MainPage::Grid_RightTapped);
 
             GridItemInfo^ info = ref new GridItemInfo();
             info->Row = i;
@@ -465,20 +454,6 @@ void MainPage::Grid_PointerEntered(Platform::Object^ sender, Windows::UI::Xaml::
             break;
         }
     }
-}
-
-
-void MainPage::Grid_Tapped(Platform::Object^ sender, Windows::UI::Xaml::Input::TappedRoutedEventArgs^ e)
-{
-    myLogW(LOG_VERBOSE, LTAG L"[%d][%s]", __LINE__, __funcw__);
-    //Update(sender, true);
-}
-
-
-void MainPage::Grid_RightTapped(Platform::Object^ sender, Windows::UI::Xaml::Input::RightTappedRoutedEventArgs^ e)
-{
-    myLogW(LOG_VERBOSE, LTAG L"[%d][%s]", __LINE__, __funcw__);
-    //Update(sender, false);
 }
 
 
