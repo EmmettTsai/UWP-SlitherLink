@@ -91,7 +91,17 @@ namespace SlitherLink
             {
                 m_degree = degree;
             }
-
+        }
+        property bool Handled
+        {
+            bool get()
+            {
+                return m_handled;
+            }
+            void set(bool handled)
+            {
+                m_handled = handled;
+            }
         }
     private:
         GridItemType m_type;
@@ -99,6 +109,7 @@ namespace SlitherLink
         int m_row;
         int m_column;
         int m_degree;
+        bool m_handled;
     };
 
 	/// <summary>
@@ -116,6 +127,7 @@ namespace SlitherLink
         bool mEnableSetCell;
         bool mEnableSetSide;
 
+        Windows::UI::Xaml::Media::SolidColorBrush^ mTransparentColor;
         Windows::UI::Xaml::Media::SolidColorBrush^ mInsideMarkColor;
         Windows::UI::Xaml::Media::SolidColorBrush^ mOutsideMarkColor;
         Windows::UI::Xaml::Media::SolidColorBrush^ mLineMarkColor;

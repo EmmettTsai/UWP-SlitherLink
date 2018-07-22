@@ -29,6 +29,7 @@ using namespace Windows::UI::Xaml::Controls;
 using namespace Windows::UI::Xaml::Controls::Primitives;
 using namespace Windows::UI::Xaml::Data;
 using namespace Windows::UI::Xaml::Input;
+using namespace Windows::UI::Xaml::Interop;
 using namespace Windows::UI::Xaml::Markup;
 using namespace Windows::UI::Xaml::Media;
 using namespace Windows::UI::Xaml::Navigation;
@@ -113,12 +114,14 @@ MainPage::MainPage()
     mEnableSetSide = true;
     mEnableSetCell = false;
 
+    mTransparentColor = ref new SolidColorBrush(Colors::Transparent);
     mInsideMarkColor = ref new SolidColorBrush(Colors::Green);
     mOutsideMarkColor = ref new SolidColorBrush(Colors::SkyBlue);
     mLineMarkColor = ref new SolidColorBrush(Colors::Black);
     mCrossMarkColor = ref new SolidColorBrush(Colors::Red);
 
-    mUrl = "https://www.puzzle-loop.com";
+    //mUrl = "https://www.puzzle-loop.com";
+    mUrl = "https://www.puzzle-loop.com/?size=9";
     mHttpFilter = ref new HttpBaseProtocolFilter();
     mHttpFilter->CacheControl->ReadBehavior = HttpCacheReadBehavior::NoCache;
     mHttpFilter->CacheControl->WriteBehavior = HttpCacheWriteBehavior::NoCache;
@@ -260,7 +263,7 @@ void MainPage::Init(int row, int col)
 
     //ref new Windows::UI::Xaml::Input::PointerEventHandler(this, &SlitherLink::MainPage::OnPointerEntered);
     //m_PointerEntered = ref new Windows::UI::Xaml::Input::TappedEventHandler(this, &SlitherLink::MainPage::OnTapped);
-#if true
+
     RootCanvas->Width = col * cellSize + (col + 1) * dotSize;
     RootCanvas->Height = row * cellSize + (row + 1) * dotSize;
 
@@ -288,13 +291,14 @@ void MainPage::Init(int row, int col)
             info->Row = i;
             info->Column = j;
             info->State = GridItemState::None;
+            info->Handled = false;
 
             if (i % 2 == 0 && j % 2 == 0)
             {
                 info->Type = GridItemType::Dot;
                 item->Width = dotSize;
                 item->Height = dotSize;
-                item->Background = ref new SolidColorBrush(Colors::Black);
+                item->Background = mLineMarkColor;
                 Canvas::SetZIndex(item, 1);
                 Canvas::SetLeft(item, (dotSize + cellSize) * (j / 2));
                 Canvas::SetTop(item, (dotSize + cellSize) * (i / 2));
@@ -306,7 +310,7 @@ void MainPage::Init(int row, int col)
                 info->Type = GridItemType::Cell;
                 item->Width = cellSize + dotSize;
                 item->Height = cellSize + dotSize;
-                item->Background = ref new SolidColorBrush(Colors::Transparent);
+                item->Background = mTransparentColor;
 
                 TextBlock^ text = ref new TextBlock();
                 text->HorizontalAlignment = Windows::UI::Xaml::HorizontalAlignment::Center;
@@ -341,7 +345,7 @@ void MainPage::Init(int row, int col)
                 info->Type = GridItemType::HorizontailLine;
                 item->Width = cellSize;
                 item->Height = dotSize;
-                item->Background = ref new SolidColorBrush(Colors::Transparent);
+                item->Background = mTransparentColor;
 
                 Canvas::SetZIndex(item, 1);
                 Canvas::SetLeft(item, dotSize + (cellSize + dotSize) * (j - 1) / 2);
@@ -352,7 +356,7 @@ void MainPage::Init(int row, int col)
                 info->Type = GridItemType::VerticalLine;
                 item->Width = dotSize;
                 item->Height = cellSize;
-                item->Background = ref new SolidColorBrush(Colors::Transparent);
+                item->Background = mTransparentColor;
 
                 Canvas::SetZIndex(item, 1);
                 Canvas::SetLeft(item, (dotSize + cellSize) * j / 2);
@@ -362,87 +366,35 @@ void MainPage::Init(int row, int col)
             RootCanvas->Children->Append(item);
         }
     }
-#else
-    Grid^ grid = ref new Grid();
-    for (int i = 0; i < 2 * row + 1; i++)
-    {
-        RowDefinition^ rowDef = ref new RowDefinition();
-        rowDef->Height = GridLength::Auto;
-        grid->RowDefinitions->Append(rowDef);
-        for (int j = 0; j < 2 * col + 1; j++)
-        {
-            ColumnDefinition^ colDef = ref new ColumnDefinition();
-            colDef->Width = GridLength::Auto;
-            grid->ColumnDefinitions->Append(colDef);
-
-            //Rectangle^ item = ref new Rectangle();
-            Border^ item = ref new Border();
-            //Canvas^ canvas = ref new Canvas();
-            item->PointerEntered += ref new Windows::UI::Xaml::Input::PointerEventHandler(this, &SlitherLink::MainPage::Grid_PointerEntered);
-            item->PointerPressed += ref new Windows::UI::Xaml::Input::PointerEventHandler(this, &SlitherLink::MainPage::Grid_PointerPressed);
-            item->PointerReleased += ref new Windows::UI::Xaml::Input::PointerEventHandler(this, &SlitherLink::MainPage::Grid_PointerReleased);
-
-            item->Tapped += ref new Windows::UI::Xaml::Input::TappedEventHandler(this, &SlitherLink::MainPage::Grid_Tapped);
-            item->RightTapped += ref new Windows::UI::Xaml::Input::RightTappedEventHandler(this, &SlitherLink::MainPage::Grid_RightTapped);
-
-
-            GridItemInfo^ info = ref new GridItemInfo();
-            info->Row = i;
-            info->Column = j;
-            info->State = GridItemState::None;
-
-            if (i % 2 == 0 && j % 2 == 0)
-            {
-                info->Type = GridItemType::Dot;
-                item->Width = dotSize;
-                item->Height = dotSize;
-                item->Background = ref new SolidColorBrush(Colors::Black);
-            }
-            else if (i % 2 == 1 && j % 2 == 1)
-            {
-                info->Type = GridItemType::Cell;
-                item->Width = cellSize;
-                item->Height = cellSize;
-                //item->Margin = Windows::UI::Xaml::Thickness(-halfDotSize, -halfDotSize, -halfDotSize, -halfDotSize);
-                //item->Padding = Windows::UI::Xaml::Thickness(halfDotSize, halfDotSize, halfDotSize, halfDotSize);
-                item->Background = ref new SolidColorBrush(Colors::Transparent);
-
-                TextBlock^ text = ref new TextBlock();
-                text->HorizontalAlignment = Windows::UI::Xaml::HorizontalAlignment::Center;
-                text->VerticalAlignment = Windows::UI::Xaml::VerticalAlignment::Center;
-                text->Text = ((i + j) % 4).ToString();
-
-                item->Child = text;
-            }
-            else if (i % 2 == 0)
-            {
-                info->Type = GridItemType::HorizontailLine;
-                item->Width = cellSize;
-                item->Height = dotSize;
-                item->Background = ref new SolidColorBrush(Colors::Transparent);
-            }
-            else
-            {
-                info->Type = GridItemType::VerticalLine;
-                item->Width = dotSize;
-                item->Height = cellSize;
-                item->Background = ref new SolidColorBrush(Colors::Transparent);
-            }
-            item->Tag = info;
-
-            grid->Children->Append(item);
-            grid->SetRow(item, i);
-            grid->SetColumn(item, j);
-        }
-    }
-    RootGrid->Children->Append(grid);
-#endif
 }
 
 
 void MainPage::Grid_PointerPressed(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e)
 {
     myLogW(LOG_VERBOSE, LTAG L"[%d][%s]", __LINE__, __funcw__);
+    Pointer^ pointer = e->Pointer;
+    if (pointer->PointerDeviceType == PointerDeviceType::Mouse)
+    {
+        if (sender->GetType()->FullName == TypeName(Viewbox::typeid).Name)
+        {
+            myLogW(LOG_DEBUG, LTAG L"[%d][%s] is Viewbox", __LINE__, __funcw__);
+            auto box = (Viewbox^)sender;
+            auto item = (Border^)box->Parent;
+            auto info = (GridItemInfo^)item->Tag;
+            info->Handled = true;
+            return;
+        }
+        auto item = (Border^)sender;
+        PointerPoint^ pointerPoint = e->GetCurrentPoint(item);
+        if (pointerPoint->Properties->IsLeftButtonPressed)
+        {
+            Update(sender, true);
+        }
+        else if (pointerPoint->Properties->IsRightButtonPressed)
+        {
+            Update(sender, false);
+        }
+    }
 }
 
 
@@ -460,11 +412,27 @@ void MainPage::Grid_PointerEntered(Platform::Object^ sender, Windows::UI::Xaml::
     {
         auto item = (Border^)sender;
         auto info = (GridItemInfo^)item->Tag;
+        if (info->Handled)
+        {
+            info->Handled = false;
+            return;
+        }
+
         PointerPoint^ pointerPoint = e->GetCurrentPoint(item);
         bool leftPress = pointerPoint->Properties->IsLeftButtonPressed;
         bool rightPress = pointerPoint->Properties->IsRightButtonPressed;
 
-
+        myLogW(LOG_DEBUG, LTAG L"[%d][%s] pos = (%d, %d)", __LINE__, __funcw__, info->Row, info->Column);
+        switch (info->Type)
+        {
+        case GridItemType::Cell:
+            myLogW(LOG_DEBUG, LTAG L"[%d][%s] type is Cell", __LINE__, __funcw__);
+            break;
+        case GridItemType::HorizontailLine:
+        case GridItemType::VerticalLine:
+            myLogW(LOG_DEBUG, LTAG L"[%d][%s] type is Side", __LINE__, __funcw__);
+            break;
+        }
         myLogW(LOG_DEBUG, LTAG L"[%d][%s] leftPress = %d", __LINE__, __funcw__, leftPress);
         myLogW(LOG_DEBUG, LTAG L"[%d][%s] rightPress = %d", __LINE__, __funcw__, rightPress);
 
@@ -503,14 +471,14 @@ void MainPage::Grid_PointerEntered(Platform::Object^ sender, Windows::UI::Xaml::
 void MainPage::Grid_Tapped(Platform::Object^ sender, Windows::UI::Xaml::Input::TappedRoutedEventArgs^ e)
 {
     myLogW(LOG_VERBOSE, LTAG L"[%d][%s]", __LINE__, __funcw__);
-    Update(sender, true);
+    //Update(sender, true);
 }
 
 
 void MainPage::Grid_RightTapped(Platform::Object^ sender, Windows::UI::Xaml::Input::RightTappedRoutedEventArgs^ e)
 {
     myLogW(LOG_VERBOSE, LTAG L"[%d][%s]", __LINE__, __funcw__);
-    Update(sender, false);
+    //Update(sender, false);
 }
 
 
@@ -559,14 +527,16 @@ void MainPage::SetCross(Windows::UI::Xaml::Controls::Border^ item)
     }
     auto info = (GridItemInfo^)item->Tag;
     info->State = GridItemState::Cross;
-    item->Background = ref new SolidColorBrush(Colors::Transparent);
+    item->Background = mTransparentColor;
 
     auto viewBox = ref new Viewbox();
     FontIcon^ icon = ref new FontIcon();
     icon->FontFamily = ref new Windows::UI::Xaml::Media::FontFamily("Segoe MDL2 Assets");
     icon->Glyph = L"\xE8BB";
+    icon->FontWeight = Windows::UI::Text::FontWeights::Bold;
     icon->Foreground = mCrossMarkColor;
     viewBox->Child = icon;
+    viewBox->PointerPressed += ref new Windows::UI::Xaml::Input::PointerEventHandler(this, &SlitherLink::MainPage::Grid_PointerPressed);
     item->Child = viewBox;
 }
 
@@ -588,11 +558,15 @@ void MainPage::SetErase(Windows::UI::Xaml::Controls::Border^ item)
         {
             return;
         }
+        myLogW(LOG_DEBUG, LTAG L"[%d][%s]", __LINE__, __funcw__);
         item->Child = nullptr;
+        myLogW(LOG_DEBUG, LTAG L"[%d][%s]", __LINE__, __funcw__);
         break;
     }
     info->State = GridItemState::None;
-    item->Background = ref new SolidColorBrush(Colors::Transparent);
+    myLogW(LOG_DEBUG, LTAG L"[%d][%s]", __LINE__, __funcw__);
+    item->Background = mTransparentColor;
+    myLogW(LOG_DEBUG, LTAG L"[%d][%s]", __LINE__, __funcw__);
 }
 
 
