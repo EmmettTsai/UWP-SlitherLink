@@ -78,14 +78,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition/>
                 </Grid.RowDefinitions>
-                <Grid HorizontalAlignment="Center" Margin="0,30,0,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="PuzzleID : " FontSize="40"/>
-                    <TextBlock Grid.Column="1" x:Name="PuzzleID" FontSize="40"/>
-                </Grid>
+                <TextBlock x:Name="PuzzleInfo" FontSize="40" HorizontalAlignment="Center" Margin="0,30,0,0"/>
                 <Canvas x:Name="RootCanvas" Grid.Row="1" Margin="50,50,50,50"/>
             </Grid>
         </ScrollViewer>

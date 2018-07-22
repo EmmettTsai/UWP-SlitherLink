@@ -175,7 +175,7 @@ namespace SlitherLink
         Windows::Web::Http::Filters::HttpBaseProtocolFilter^ mHttpFilter;
         Windows::Web::Http::HttpClient^ mHttpClient;
 
-        Platform::String^ mPuzzleID;
+        Platform::String^ mPuzzleInfo;
 
         void Init(int row, int col);
         void InitHttpClient();

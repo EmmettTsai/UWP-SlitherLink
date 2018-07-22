@@ -815,12 +815,12 @@ void SlitherLink::MainPage::LoadFromUrlButton_Click(Platform::Object^ sender, Wi
                     myLogW(LOG_WARN, LTAG L"LoadFromUrl ReadHtmlFile fail");
                     return;
                 }
-                int row = mMap->Size;
+                int row = mLoop->Size;
                 if (row < 0)
                 {
                     return;
                 }
-                int col = mMap->GetAt(0)->Size;
+                int col = mLoop->GetAt(0)->Size;
                 if (col < 0)
                 {
                     return;
@@ -829,16 +829,17 @@ void SlitherLink::MainPage::LoadFromUrlButton_Click(Platform::Object^ sender, Wi
 
                 this->Dispatcher->RunAsync(CoreDispatcherPriority::Normal, ref new DispatchedHandler([this, row, col]() {
                     Init(row, col);
-                    PuzzleID->Text = mPuzzleID;
+                    PuzzleInfo->Text = mPuzzleInfo;
                 }));
 
             });
         }
     });
 #else
-    int size = LoopSizeBox->SelectedIndex;
+    int index = LoopSizeBox->SelectedIndex;
     String^ loopName = (String^)LoopSizeBox->SelectedItem;
-    myLogW(LOG_INFO, LTAG L"selected loop size = %d, name = %s", size, loopName->Data());
+    int size = (int)getLoopSize(index);
+    myLogW(LOG_INFO, LTAG L"selected index = %d, loop size = %d, name = %s", index, size, loopName->Data());
     Uri^ uri = ref new Uri(mUrl + "/?size=" + size);
     create_task(mHttpClient->GetAsync(uri)).then([this](HttpResponseMessage^ response) {
         create_task(response->Content->ReadAsStringAsync()).then([this](String^ responseBodyAsText) {
@@ -859,7 +860,7 @@ void SlitherLink::MainPage::LoadFromUrlButton_Click(Platform::Object^ sender, Wi
 
                     this->Dispatcher->RunAsync(CoreDispatcherPriority::Normal, ref new DispatchedHandler([this, row, col]() {
                         Init(row, col);
-                        PuzzleID->Text = mPuzzleID;
+                        PuzzleInfo->Text = mPuzzleInfo;
                     }));
                 }
             }));
@@ -883,17 +884,28 @@ bool SlitherLink::MainPage::ParseHtmlText(Platform::String^ content)
     int row;
     int col;
 
-    // get puzzle id
-    pattern.assign(L"Puzzle ID: [\\d,]+(?=</p>)");
-    regex.assign(pattern);
+    // get puzzle info
+    pattern.assign(L"<div class=\"puzzleInfo\">[\r\n]*.*?</p>");
+    regex = std::wregex(pattern);
     if (std::regex_search(str, matchs, regex))
     {
-        mPuzzleID = ref new String(matchs[0].str().substr(wcslen(L"Puzzle ID: ")).c_str());
-        myLogW(LOG_INFO, LTAG L"mPuzzleID = %s", mPuzzleID->Data());
+        std::wstring substr = matchs[0].str();
+        pattern.assign(L"<p>.*?(?=</p>)");
+        regex.assign(pattern);
+        if (std::regex_search(substr, matchs, regex))
+        {
+            mPuzzleInfo = ref new String(matchs[0].str().substr(wcslen(L"<p>")).c_str());
+            myLogW(LOG_INFO, LTAG L"puzzle info = %s", mPuzzleInfo->Data());
+        }
+        else
+        {
+            myLog(LOG_ERROR, TAG "search puzzle info 2 fail");
+            return false;
+        }
     }
     else
     {
-        myLog(LOG_ERROR, TAG "search height fail");
+        myLog(LOG_ERROR, TAG "search puzzle info 1 fail");
         return false;
     }
 
@@ -948,7 +960,7 @@ bool SlitherLink::MainPage::ParseHtmlText(Platform::String^ content)
             }
             else
             {
-                myLog(LOG_ERROR, TAG "search map at (%d, %d) fail", i, j);
+                myLog(LOG_ERROR, TAG "search loop at (%d, %d) fail", i, j);
                 return false;
             }
             str = matchs.suffix();
@@ -966,19 +978,19 @@ LoopSize SlitherLink::MainPage::getLoopSize(int index)
     {
     default:
     case 0: return LoopSize::Normal_5x5;
-    case 1: return LoopSize::Normal_10x10;
-    case 2: return LoopSize::Normal_15x15;
-    case 3: return LoopSize::Normal_20x20;
-    case 4: return LoopSize::Hard_5x5;
+    case 1: return LoopSize::Hard_5x5;
+    case 2: return LoopSize::Normal_7x7;
+    case 3: return LoopSize::Hard_7x7;
+    case 4: return LoopSize::Normal_10x10;
     case 5: return LoopSize::Hard_10x10;
-    case 6: return LoopSize::Hard_15x15;
-    case 7: return LoopSize::Hard_20x20;
-    case 8: return LoopSize::Normal_25x30;
-    case 9: return LoopSize::Hard_25x30;
-    case 10: return LoopSize::Normal_7x7;
-    case 11: return LoopSize::Hard_7x7;
-    case 13: return LoopSize::Special_Daily;
-    case 12: return LoopSize::Special_Weekly;
+    case 6: return LoopSize::Normal_15x15;
+    case 7: return LoopSize::Hard_15x15;
+    case 8: return LoopSize::Normal_20x20;
+    case 9: return LoopSize::Hard_20x20;
+    case 10: return LoopSize::Normal_25x30;
+    case 11: return LoopSize::Hard_25x30;
+    case 12: return LoopSize::Special_Daily;
+    case 13: return LoopSize::Special_Weekly;
     case 14: return LoopSize::Special_Monthly;
     }
 }

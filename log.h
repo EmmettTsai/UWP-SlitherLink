@@ -21,10 +21,6 @@ typedef enum _LOG_LEVEL
 #define TAG "[SlitherLink] "
 #define LTAG L"[SlitherLink] "
 
-#if __cplusplus < 201703L
-#define __funcw__ (std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>>().from_bytes(__func__).c_str())
-#else
-// wstring_convert deprecated in c++17
 inline std::wstring strToWstr(const std::string& str)
 {
     if (str.empty())
@@ -35,7 +31,6 @@ inline std::wstring strToWstr(const std::string& str)
 }
 
 #define __funcw__ (strToWstr(std::string(__func__)).c_str())
-#endif
 
 void myLog(LOG_LEVEL level, const char *pFormat, ...);
 void myLogW(LOG_LEVEL level, const wchar_t *pFormat, ...);
