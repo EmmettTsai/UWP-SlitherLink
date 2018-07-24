@@ -64,12 +64,16 @@ https://docs.microsoft.com/zh-tw/dotnet/standard/base-types/regular-expression-l
 
 https://blog.csdn.net/mycwq/article/details/18838151
 http://tommyjswu-blog.logdown.com/posts/726230-cpp11-regex-expression
+
+https://msdn.microsoft.com/en-us/library/ts4c4dw6.aspx
 */
+
 
 MainPage::MainPage()
 {
 	InitializeComponent();
-    mLoop = ref new Vector<IVector<byte>^>();
+    mLoop = ref new Vector<byte>();
+    mExtendedLoop = ref new Vector<GridItemInfo^>();
 
     mEnableSetSide = true;
     mEnableSetCell = false;
@@ -208,6 +212,7 @@ void MainPage::Init(int row, int col)
 {
     // TODO: need clear previous event handler?
     RootCanvas->Children->Clear();
+    mExtendedLoop->Clear();
 
     int dotSize = 10;
     double halfDotSize = dotSize * 0.5;
@@ -221,7 +226,17 @@ void MainPage::Init(int row, int col)
     * hLine: (2*i, 2*(j+1))
     * vLine: (2*(i+1), 2*j)
     *
+    * 0 1 | 2=mColStart ... n-3=mColEnd | n-2 n-1 | n=mExtendedColSize
     **/
+
+    mRowSize = 2 * row + 1;
+    mColSize = 2 * col + 1;
+    mExtendedRowSize = mRowSize + 4;
+    mExtendedColSize = mColSize + 4;
+    mRowStart = 2;
+    mRowEnd = mExtendedRowSize - 3;
+    mColStart = 2;
+    mColEnd = mExtendedColSize - 3;
 
     RootCanvas->Width = col * cellSize + (col + 1) * dotSize;
     RootCanvas->Height = row * cellSize + (row + 1) * dotSize;
@@ -235,92 +250,136 @@ void MainPage::Init(int row, int col)
     Canvas::SetTop(background, halfDotSize);
     RootCanvas->Children->Append(background);
 
-    for (int i = 0; i < 2 * row + 1; i++)
+    for (int i = 0; i < mExtendedRowSize; i++)
     {
-        for (int j = 0; j < 2 * col + 1; j++)
+        for (int j = 0; j < mExtendedColSize; j++)
         {
-            Border^ item = ref new Border();
-            item->PointerEntered += ref new Windows::UI::Xaml::Input::PointerEventHandler(this, &SlitherLink::MainPage::Grid_PointerEntered);
-            item->PointerPressed += ref new Windows::UI::Xaml::Input::PointerEventHandler(this, &SlitherLink::MainPage::Grid_PointerPressed);
-            item->PointerReleased += ref new Windows::UI::Xaml::Input::PointerEventHandler(this, &SlitherLink::MainPage::Grid_PointerReleased);
+            int innerI = i - 2;
+            int innerJ = j - 2;
+            Border^ view;
+            bool isExtendedItem = !(i >= mRowStart && i <= mRowEnd && j >= mColStart && j <= mColEnd);
 
             GridItemInfo^ info = ref new GridItemInfo();
             info->Row = i;
             info->Column = j;
             info->State = GridItemState::None;
             info->Handled = false;
+            info->IsExtended = isExtendedItem;
+
+            if (!isExtendedItem)
+            {
+                view = ref new Border();
+                view->PointerEntered += ref new Windows::UI::Xaml::Input::PointerEventHandler(this, &SlitherLink::MainPage::Grid_PointerEntered);
+                view->PointerPressed += ref new Windows::UI::Xaml::Input::PointerEventHandler(this, &SlitherLink::MainPage::Grid_PointerPressed);
+                view->PointerReleased += ref new Windows::UI::Xaml::Input::PointerEventHandler(this, &SlitherLink::MainPage::Grid_PointerReleased);
+                info->View = view;
+            }
 
             if (i % 2 == 0 && j % 2 == 0)
             {
                 info->Type = GridItemType::Dot;
-                item->Width = dotSize;
-                item->Height = dotSize;
-                item->Background = mLineMarkColor;
-                Canvas::SetZIndex(item, 1);
-                Canvas::SetLeft(item, (dotSize + cellSize) * (j / 2));
-                Canvas::SetTop(item, (dotSize + cellSize) * (i / 2));
+                info->Degree = 0;
+                if (!isExtendedItem)
+                {
+                    view->Width = dotSize;
+                    view->Height = dotSize;
+                    view->Background = mLineMarkColor;
+                    Canvas::SetZIndex(view, 1);
+                    Canvas::SetLeft(view, (dotSize + cellSize) * (innerJ / 2));
+                    Canvas::SetTop(view, (dotSize + cellSize) * (innerI / 2));
+                }
             }
             else if (i % 2 == 1 && j % 2 == 1)
             {
-                int dataRow = (i - 1) / 2;
-                int dataCol = (j - 1) / 2;
                 info->Type = GridItemType::Cell;
-                item->Width = cellSize + dotSize;
-                item->Height = cellSize + dotSize;
-                item->Background = mTransparentColor;
 
-                TextBlock^ text = ref new TextBlock();
-                text->HorizontalAlignment = Windows::UI::Xaml::HorizontalAlignment::Center;
-                text->VerticalAlignment = Windows::UI::Xaml::VerticalAlignment::Center;
-
-                switch (mLoop->GetAt(dataRow)->GetAt(dataCol))
+                if (isExtendedItem)
                 {
-                case '0':
-                    text->Text = "0";
-                    break;
-                case '1':
-                    text->Text = "1";
-                    break;
-                case '2':
-                    text->Text = "2";
-                    break;
-                case '3':
-                    text->Text = "3";
-                    break;
-                default:
-                    text->Text = "";
+                    info->State = GridItemState::OutSide;
+                    info->Degree = -1;
                 }
+                else
+                {
+                    int loopRow = (innerI - 1) / 2;
+                    int loopCol = (innerJ - 1) / 2;
 
-                item->Child = text;
+                    switch (GetLoopAt(loopRow, loopCol))
+                    {
+                    case '0':
+                        info->Degree = 0;
+                        break;
+                    case '1':
+                        info->Degree = 1;
+                        break;
+                    case '2':
+                        info->Degree = 2;
+                        break;
+                    case '3':
+                        info->Degree = 3;
+                        break;
+                    default:
+                        info->Degree = -1;
+                    }
 
-                Canvas::SetZIndex(item, 0);
-                Canvas::SetLeft(item, dotSize + (cellSize + dotSize) * dataCol - halfDotSize);
-                Canvas::SetTop(item, dotSize + (cellSize + dotSize) * dataRow - halfDotSize);
+                    view->Width = cellSize + dotSize;
+                    view->Height = cellSize + dotSize;
+                    view->Background = mTransparentColor;
+
+                    TextBlock^ text = ref new TextBlock();
+                    text->HorizontalAlignment = Windows::UI::Xaml::HorizontalAlignment::Center;
+                    text->VerticalAlignment = Windows::UI::Xaml::VerticalAlignment::Center;
+                    text->Text = info->Degree > 0 ? info->Degree.ToString() : "";
+                    view->Child = text;
+
+                    Canvas::SetZIndex(view, 0);
+                    Canvas::SetLeft(view, dotSize + (cellSize + dotSize) * loopCol - halfDotSize);
+                    Canvas::SetTop(view, dotSize + (cellSize + dotSize) * loopRow - halfDotSize);
+                }
             }
             else if (i % 2 == 0)
             {
                 info->Type = GridItemType::HorizontailLine;
-                item->Width = cellSize;
-                item->Height = dotSize;
-                item->Background = mTransparentColor;
+                info->Degree = 0;
+                if (isExtendedItem)
+                {
+                    info->State = GridItemState::Cross;
+                }
+                else
+                {
+                    view->Width = cellSize;
+                    view->Height = dotSize;
+                    view->Background = mTransparentColor;
 
-                Canvas::SetZIndex(item, 1);
-                Canvas::SetLeft(item, dotSize + (cellSize + dotSize) * (j - 1) / 2);
-                Canvas::SetTop(item, (dotSize + cellSize) * i / 2);
+                    Canvas::SetZIndex(view, 1);
+                    Canvas::SetLeft(view, dotSize + (cellSize + dotSize) * (innerJ - 1) / 2);
+                    Canvas::SetTop(view, (dotSize + cellSize) * innerI / 2);
+                }
             }
             else
             {
                 info->Type = GridItemType::VerticalLine;
-                item->Width = dotSize;
-                item->Height = cellSize;
-                item->Background = mTransparentColor;
+                info->Degree = 0;
+                if (isExtendedItem)
+                {
+                    info->State = GridItemState::Cross;
+                }
+                else
+                {
+                    view->Width = dotSize;
+                    view->Height = cellSize;
+                    view->Background = mTransparentColor;
 
-                Canvas::SetZIndex(item, 1);
-                Canvas::SetLeft(item, (dotSize + cellSize) * j / 2);
-                Canvas::SetTop(item, dotSize + (cellSize + dotSize) * (i - 1) / 2);
+                    Canvas::SetZIndex(view, 1);
+                    Canvas::SetLeft(view, (dotSize + cellSize) * innerJ / 2);
+                    Canvas::SetTop(view, dotSize + (cellSize + dotSize) * (innerI - 1) / 2);
+                }
             }
-            item->Tag = info;
-            RootCanvas->Children->Append(item);
+            if (!isExtendedItem)
+            {
+                view->Tag = info;
+                RootCanvas->Children->Append(view);
+            }
+            mExtendedLoop->Append(info);
         }
     }
 }
@@ -688,7 +747,7 @@ void SlitherLink::MainPage::CellToggleButton_Unchecked(Platform::Object^ sender,
 }
 
 
-task<void> SlitherLink::MainPage::ReadTextFile(StorageFile^ file)
+task<bool> SlitherLink::MainPage::ReadTextFile(StorageFile^ file)
 {
     IRandomAccessStream^ stream = co_await file->OpenReadAsync();
     myLogW(LOG_INFO, LTAG L"------------- stream->Size = %llu -------------", stream->Size);
@@ -708,17 +767,23 @@ task<void> SlitherLink::MainPage::ReadTextFile(StorageFile^ file)
     char *ptr = buf;
     int pos;
 
-    int row;
-    int col;
+    int row = -1;
+    int col = -1;
 
     sscanf_s(ptr, "%d %d%*[\r\n]%n", &row, &col, &pos);
+    if (row < 0 || col < 0)
+    {
+        delete buf;
+        co_return false;
+    }
     ptr += pos;
     myLogW(LOG_INFO, LTAG L"row = %d, col = %d, pos = %d", row, col, pos);
+    mLoopRowSize = row;
+    mLoopColSize = col;
     mLoop->Clear();
     for (int i = 0; i < row; i++)
     {
         myLogW(LOG_DEBUG, LTAG L"------------- row = %d -------------", i);
-        auto arr = ref new Vector<byte>();
         for (int j = 0; j < col; j++)
         {
             char ch;
@@ -726,17 +791,16 @@ task<void> SlitherLink::MainPage::ReadTextFile(StorageFile^ file)
             //ptr++;
             ch = *ptr++;
             myLogW(LOG_DEBUG, LTAG L"[%d] ch = %c", j, ch);
-            arr->Append(ch);
+            mLoop->Append(ch);
         }
         sscanf_s(ptr, "%*[\r\n]%n", &pos);
         myLogW(LOG_DEBUG, LTAG L"[%d] pos = %d", i, pos);
         ptr += pos;
-        mLoop->Append(arr);
     }
 
     delete buf;
 
-    co_return;
+    co_return true;
 }
 
 
@@ -764,20 +828,14 @@ void SlitherLink::MainPage::OpenFileButton_Click(Platform::Object^ sender, Windo
     {
         if (file != nullptr)
         {
-            create_task(ReadTextFile(file)).then([this]() {
-                int row = mLoop->Size;
-                if (row < 0)
+            create_task(ReadTextFile(file)).then([this](bool result) {
+                if (!result)
                 {
+                    myLogW(LOG_WARN, LTAG L"OpenFile ReadTextFile fail");
                     return;
                 }
-                int col = mLoop->GetAt(0)->Size;
-                if (col < 0)
-                {
-                    return;
-                }
-                myLogW(LOG_DEBUG, LTAG L"mMap: row = %d, col = %d", row, col);
-                this->Dispatcher->RunAsync(CoreDispatcherPriority::Normal, ref new DispatchedHandler([this, row, col]() {
-                    Init(row, col);
+                this->Dispatcher->RunAsync(CoreDispatcherPriority::Normal, ref new DispatchedHandler([this]() {
+                    Init(mLoopRowSize, mLoopColSize);
                 }));
             });
         }
@@ -815,20 +873,8 @@ void SlitherLink::MainPage::LoadFromUrlButton_Click(Platform::Object^ sender, Wi
                     myLogW(LOG_WARN, LTAG L"LoadFromUrl ReadHtmlFile fail");
                     return;
                 }
-                int row = mLoop->Size;
-                if (row < 0)
-                {
-                    return;
-                }
-                int col = mLoop->GetAt(0)->Size;
-                if (col < 0)
-                {
-                    return;
-                }
-                myLogW(LOG_DEBUG, LTAG L"mMap: row = %d, col = %d", row, col);
-
-                this->Dispatcher->RunAsync(CoreDispatcherPriority::Normal, ref new DispatchedHandler([this, row, col]() {
-                    Init(row, col);
+                this->Dispatcher->RunAsync(CoreDispatcherPriority::Normal, ref new DispatchedHandler([this]() {
+                    Init(mLoopRowSize, mLoopColSize);
                     PuzzleInfo->Text = mPuzzleInfo;
                 }));
 
@@ -844,25 +890,16 @@ void SlitherLink::MainPage::LoadFromUrlButton_Click(Platform::Object^ sender, Wi
     create_task(mHttpClient->GetAsync(uri)).then([this](HttpResponseMessage^ response) {
         create_task(response->Content->ReadAsStringAsync()).then([this](String^ responseBodyAsText) {
             this->Dispatcher->RunAsync(CoreDispatcherPriority::Normal, ref new DispatchedHandler([this, responseBodyAsText]() {
-                if (ParseHtmlText(responseBodyAsText))
+                if (!ParseHtmlText(responseBodyAsText))
                 {
-                    int row = mLoop->Size;
-                    if (row < 0)
-                    {
-                        return;
-                    }
-                    int col = mLoop->GetAt(0)->Size;
-                    if (col < 0)
-                    {
-                        return;
-                    }
-                    myLogW(LOG_DEBUG, LTAG L"mMap: row = %d, col = %d", row, col);
-
-                    this->Dispatcher->RunAsync(CoreDispatcherPriority::Normal, ref new DispatchedHandler([this, row, col]() {
-                        Init(row, col);
-                        PuzzleInfo->Text = mPuzzleInfo;
-                    }));
+                    myLogW(LOG_WARN, LTAG L"LoadFromUrl ParseHtmlText fail");
+                    return;
                 }
+
+                this->Dispatcher->RunAsync(CoreDispatcherPriority::Normal, ref new DispatchedHandler([this]() {
+                    Init(mLoopRowSize, mLoopColSize);
+                    PuzzleInfo->Text = mPuzzleInfo;
+                }));
             }));
         });
     });
@@ -938,6 +975,8 @@ bool SlitherLink::MainPage::ParseHtmlText(Platform::String^ content)
     }
 
     // get loop
+    mLoopRowSize = row;
+    mLoopColSize = col;
     mLoop->Clear();
     pattern.assign(L"<td align=\"center\" >\\d?<(?=/td>)");
     regex.assign(pattern);
@@ -945,7 +984,6 @@ bool SlitherLink::MainPage::ParseHtmlText(Platform::String^ content)
     int len = wcslen(L"<td align=\"center\" >");
     for (int i = 0; i < row; i++)
     {
-        auto arr = ref new Vector<byte>();
         for (int j = 0; j < col; j++)
         {
             if (std::regex_search(str, matchs, regex))
@@ -956,7 +994,7 @@ bool SlitherLink::MainPage::ParseHtmlText(Platform::String^ content)
                 {
                     ch = ' ';
                 }
-                arr->Append(ch);
+                mLoop->Append(ch);
             }
             else
             {
@@ -965,7 +1003,6 @@ bool SlitherLink::MainPage::ParseHtmlText(Platform::String^ content)
             }
             str = matchs.suffix();
         }
-        mLoop->Append(arr);
     }
     myLog(LOG_INFO, TAG "ParseHtmlText done");
     return true;
@@ -993,4 +1030,16 @@ LoopSize SlitherLink::MainPage::getLoopSize(int index)
     case 13: return LoopSize::Special_Weekly;
     case 14: return LoopSize::Special_Monthly;
     }
+}
+
+
+inline byte SlitherLink::MainPage::GetLoopAt(int i, int j)
+{
+    return mLoop->GetAt(i * mLoopColSize + j);
+}
+
+
+inline GridItemInfo^ SlitherLink::MainPage::GetExtendedLoopAt(int i, int j)
+{
+    return mExtendedLoop->GetAt(i * mExtendedColSize + j);
 }

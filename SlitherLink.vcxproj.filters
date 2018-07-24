@@ -26,6 +26,11 @@
     <ClInclude Include="App.xaml.h" />
     <ClInclude Include="MainPage.xaml.h" />
     <ClInclude Include="log.h" />
+    <ClInclude Include="GridItemType.h" />
+    <ClInclude Include="GridItemState.h" />
+    <ClInclude Include="IndicatorState.h" />
+    <ClInclude Include="GridItemInfo.h" />
+    <ClInclude Include="LoopSize.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\LockScreenLogo.scale-200.png">
