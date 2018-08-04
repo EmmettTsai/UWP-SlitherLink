@@ -9,6 +9,7 @@
 #include <string>
 #include <locale.h>
 #include "MainPage.xaml.h"
+#include "ShaderPair.h"
 
 using namespace SlitherLink;
 
@@ -72,7 +73,6 @@ https://msdn.microsoft.com/en-us/library/ts4c4dw6.aspx
 MainPage::MainPage()
 {
     InitializeComponent();
-    InitView();
 
     mLoop = ref new Vector<byte>();
     mExtendedLoop = ref new Vector<GridItemInfo^>();
@@ -85,6 +85,7 @@ MainPage::MainPage()
     mOutsideMarkColor = ref new SolidColorBrush(Colors::SkyBlue);
     mLineMarkColor = ref new SolidColorBrush(Colors::Black);
     mCrossMarkColor = ref new SolidColorBrush(Colors::Red);
+    InitView();
 
     mUrl = "https://www.puzzle-loop.com";
     InitHttpClient();
@@ -93,10 +94,17 @@ MainPage::MainPage()
 
 void MainPage::InitView()
 {
+    //"Green" "SkyBlue"
+    mMainShaderPair = CreateShaderPair(mInsideMarkColor, mOutsideMarkColor);
+    ShaderPanel->Children->Append(mMainShaderPair);
     //"Yellow" "Red"
     ShaderPanel->Children->Append(CreateShaderPair(Colors::Yellow, Colors::Red));
-    //"Green" "Pink"
-    ShaderPanel->Children->Append(CreateShaderPair(Colors::Green, Colors::Pink));
+    //"Blue" "Pink"
+    ShaderPanel->Children->Append(CreateShaderPair(Colors::Blue, Colors::Pink));
+
+    //mCurrentLeftMarkCellColor = mInsideMarkColor;
+    //mCurrentRightMarkCellColor = mOutsideMarkColor;
+    mMainShaderPair->IsChecked = true;
 }
 
 
@@ -520,7 +528,7 @@ void MainPage::SetInside(Windows::UI::Xaml::Controls::Border^ item)
     }
     auto info = (GridItemInfo^)item->Tag;
     info->State = GridItemState::InSide;
-    item->Background = mInsideMarkColor;
+    item->Background = mCurrentLeftMarkCellColor;
 }
 
 
@@ -532,7 +540,7 @@ void MainPage::SetOutside(Windows::UI::Xaml::Controls::Border^ item)
     }
     auto info = (GridItemInfo^)item->Tag;
     info->State = GridItemState::OutSide;
-    item->Background = mOutsideMarkColor;
+    item->Background = mCurrentRightMarkCellColor;
 }
 
 
@@ -1065,6 +1073,12 @@ inline GridItemInfo^ SlitherLink::MainPage::GetExtendedLoopAt(int i, int j)
 
 Windows::UI::Xaml::Controls::RadioButton^ SlitherLink::MainPage::CreateShaderPair(Windows::UI::Color left, Windows::UI::Color right)
 {
+    return CreateShaderPair(ref new SolidColorBrush(left), ref new SolidColorBrush(right));
+}
+
+
+Windows::UI::Xaml::Controls::RadioButton^ SlitherLink::MainPage::CreateShaderPair(Windows::UI::Xaml::Media::SolidColorBrush^ left, Windows::UI::Xaml::Media::SolidColorBrush^ right)
+{
     auto rectStyle = dynamic_cast<Windows::UI::Xaml::Style^>(this->Resources->Lookup("RectangleStyle1"));
     auto buttonStyle = dynamic_cast<Windows::UI::Xaml::Style^>(this->Resources->Lookup("RadioButtonStyle1"));
 
@@ -1073,14 +1087,14 @@ Windows::UI::Xaml::Controls::RadioButton^ SlitherLink::MainPage::CreateShaderPai
     leftRect->Drop += ref new Windows::UI::Xaml::DragEventHandler(this, &SlitherLink::MainPage::Rectangle_Drop);
     leftRect->DragStarting += ref new Windows::Foundation::TypedEventHandler<Windows::UI::Xaml::UIElement ^, Windows::UI::Xaml::DragStartingEventArgs ^>(this, &SlitherLink::MainPage::Rectangle_DragStarting);
     leftRect->DragEnter += ref new Windows::UI::Xaml::DragEventHandler(this, &SlitherLink::MainPage::Rectangle_DragEnter);
-    leftRect->Fill = ref new SolidColorBrush(left);
+    leftRect->Fill = left;
 
     Rectangle^ rightRect = ref new Rectangle();
     rightRect->Style = rectStyle;
     rightRect->Drop += ref new Windows::UI::Xaml::DragEventHandler(this, &SlitherLink::MainPage::Rectangle_Drop);
     rightRect->DragStarting += ref new Windows::Foundation::TypedEventHandler<Windows::UI::Xaml::UIElement ^, Windows::UI::Xaml::DragStartingEventArgs ^>(this, &SlitherLink::MainPage::Rectangle_DragStarting);
     rightRect->DragEnter += ref new Windows::UI::Xaml::DragEventHandler(this, &SlitherLink::MainPage::Rectangle_DragEnter);
-    rightRect->Fill = ref new SolidColorBrush(right);
+    rightRect->Fill = right;
 
     StackPanel^ panel = ref new StackPanel();
     panel->Orientation = Windows::UI::Xaml::Controls::Orientation::Horizontal;
@@ -1091,6 +1105,8 @@ Windows::UI::Xaml::Controls::RadioButton^ SlitherLink::MainPage::CreateShaderPai
     button->Style = buttonStyle;
     button->Margin = Thickness(10, 10, 10, 10);
     button->Content = panel;
+    button->Checked += ref new Windows::UI::Xaml::RoutedEventHandler(this, &SlitherLink::MainPage::RadioButton_OnChecked);
+    button->Tag = ref new ShaderPair(left, right);
 
     return button;
 }
@@ -1107,6 +1123,7 @@ void SlitherLink::MainPage::Rectangle_Drop(Platform::Object^ sender, Windows::UI
     auto sourceColor = sourceBrush->Color;
     auto targetColor = targetBrush->Color;
 
+#if false
     String^ msg = "from ("
         + sourceColor.A + "," + sourceColor.R + "," + sourceColor.G + "," + sourceColor.B + ")"
         + " to ("
@@ -1114,6 +1131,7 @@ void SlitherLink::MainPage::Rectangle_Drop(Platform::Object^ sender, Windows::UI
 
     auto dialog = ref new Windows::UI::Popups::MessageDialog(msg);
     dialog->ShowAsync();
+#endif
 }
 
 
@@ -1140,4 +1158,13 @@ void SlitherLink::MainPage::Rectangle_DragEnter(Platform::Object^ sender, Window
 void SlitherLink::MainPage::Rectangle_DragStarting(Windows::UI::Xaml::UIElement^ sender, Windows::UI::Xaml::DragStartingEventArgs^ args)
 {
     mDragObject = sender;
+}
+
+
+void SlitherLink::MainPage::RadioButton_OnChecked(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+{
+    RadioButton^ button = (RadioButton^)sender;
+    ShaderPair^ shader = (ShaderPair^)button->Tag;
+    mCurrentLeftMarkCellColor = shader->Left;
+    mCurrentRightMarkCellColor = shader->Right;
 }

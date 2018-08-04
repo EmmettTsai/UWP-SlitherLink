@@ -33,6 +33,8 @@ namespace SlitherLink
         Windows::UI::Xaml::Media::SolidColorBrush^ mOutsideMarkColor;
         Windows::UI::Xaml::Media::SolidColorBrush^ mLineMarkColor;
         Windows::UI::Xaml::Media::SolidColorBrush^ mCrossMarkColor;
+        Windows::UI::Xaml::Media::SolidColorBrush^ mCurrentLeftMarkCellColor;
+        Windows::UI::Xaml::Media::SolidColorBrush^ mCurrentRightMarkCellColor;
 
         Platform::String^ mUrl;
         Windows::Web::Http::Filters::HttpBaseProtocolFilter^ mHttpFilter;
@@ -91,7 +93,10 @@ namespace SlitherLink
         inline byte GetLoopAt(int i, int j);
         inline GridItemInfo^ GetExtendedLoopAt(int i, int j);
 
+        Windows::UI::Xaml::Controls::RadioButton^ mMainShaderPair;
         Windows::UI::Xaml::Controls::RadioButton^ CreateShaderPair(Windows::UI::Color left, Windows::UI::Color right);
+        Windows::UI::Xaml::Controls::RadioButton^ CreateShaderPair(Windows::UI::Xaml::Media::SolidColorBrush^ left, Windows::UI::Xaml::Media::SolidColorBrush^ right);
+        void RadioButton_OnChecked(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         Platform::Object^ mDragObject;
         void Rectangle_Drop(Platform::Object^ sender, Windows::UI::Xaml::DragEventArgs^ e);
         void Rectangle_DragEnter(Platform::Object^ sender, Windows::UI::Xaml::DragEventArgs^ e);
