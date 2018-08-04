@@ -96,6 +96,7 @@ namespace SlitherLink
         Windows::UI::Xaml::Controls::RadioButton^ mMainShaderPair;
         Windows::UI::Xaml::Controls::RadioButton^ CreateShaderPair(Windows::UI::Color left, Windows::UI::Color right);
         Windows::UI::Xaml::Controls::RadioButton^ CreateShaderPair(Windows::UI::Xaml::Media::SolidColorBrush^ left, Windows::UI::Xaml::Media::SolidColorBrush^ right);
+        void ReplaceColor(Windows::UI::Color oldColor, Windows::UI::Color newColor);
         void RadioButton_OnChecked(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         Platform::Object^ mDragObject;
         void Rectangle_Drop(Platform::Object^ sender, Windows::UI::Xaml::DragEventArgs^ e);

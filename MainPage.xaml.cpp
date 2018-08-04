@@ -67,6 +67,8 @@ https://blog.csdn.net/mycwq/article/details/18838151
 http://tommyjswu-blog.logdown.com/posts/726230-cpp11-regex-expression
 
 https://msdn.microsoft.com/en-us/library/ts4c4dw6.aspx
+
+https://msdn.microsoft.com/en-us/library/windows/desktop/bb189018.aspx
 */
 
 
@@ -80,11 +82,6 @@ MainPage::MainPage()
     mEnableSetSide = true;
     mEnableSetCell = false;
 
-    mTransparentColor = ref new SolidColorBrush(Colors::Transparent);
-    mInsideMarkColor = ref new SolidColorBrush(Colors::Green);
-    mOutsideMarkColor = ref new SolidColorBrush(Colors::SkyBlue);
-    mLineMarkColor = ref new SolidColorBrush(Colors::Black);
-    mCrossMarkColor = ref new SolidColorBrush(Colors::Red);
     InitView();
 
     mUrl = "https://www.puzzle-loop.com";
@@ -94,16 +91,49 @@ MainPage::MainPage()
 
 void MainPage::InitView()
 {
-    //"Green" "SkyBlue"
+    Color left;
+    Color right;
+    left = ColorHelper::FromArgb(0xFF, 0, 0, 0);
+    right = ColorHelper::FromArgb(0xFF, 0, 0, 0);
+
+    mTransparentColor = ref new SolidColorBrush(Colors::Transparent);
+    mLineMarkColor = ref new SolidColorBrush(Colors::Black);
+    mCrossMarkColor = ref new SolidColorBrush(Colors::Red);
+
+    //"#FF0000" "#00FFFF"
+    left = ColorHelper::FromArgb(0xFF, 0xFF, 0, 0);
+    right = ColorHelper::FromArgb(0xFF, 0, 0xFF, 0xFF);
+    mInsideMarkColor = ref new SolidColorBrush(left);
+    mOutsideMarkColor = ref new SolidColorBrush(right);
     mMainShaderPair = CreateShaderPair(mInsideMarkColor, mOutsideMarkColor);
     ShaderPanel->Children->Append(mMainShaderPair);
-    //"Yellow" "Red"
-    ShaderPanel->Children->Append(CreateShaderPair(Colors::Yellow, Colors::Red));
-    //"Blue" "Pink"
-    ShaderPanel->Children->Append(CreateShaderPair(Colors::Blue, Colors::Pink));
 
-    //mCurrentLeftMarkCellColor = mInsideMarkColor;
-    //mCurrentRightMarkCellColor = mOutsideMarkColor;
+    //"#00FF00" "#FF00FF"
+    left = ColorHelper::FromArgb(0xFF, 0, 0xFF, 0);
+    right = ColorHelper::FromArgb(0xFF, 0xFF, 0, 0xFF);
+    ShaderPanel->Children->Append(CreateShaderPair(left, right));
+
+    //"#0000FF" "#FFFF00"
+    left = ColorHelper::FromArgb(0xFF, 0, 0, 0xFF);
+    right = ColorHelper::FromArgb(0xFF, 0xFF, 0xFF, 0);
+    ShaderPanel->Children->Append(CreateShaderPair(left, right));
+
+    //"#FF7F00" "#007FFF"
+    left = ColorHelper::FromArgb(0xFF, 0xFF, 0x7F, 0);
+    right = ColorHelper::FromArgb(0xFF, 0, 0x7F, 0xFF);
+    ShaderPanel->Children->Append(CreateShaderPair(left, right));
+
+    //"#7FFF00" "#7F00FF"
+    left = ColorHelper::FromArgb(0xFF, 0x7F, 0xFF, 0x00);
+    right = ColorHelper::FromArgb(0xFF, 0x7F, 0x00, 0xFF);
+    ShaderPanel->Children->Append(CreateShaderPair(left, right));
+
+    //"#00FF7F" "#FF007F"
+    left = ColorHelper::FromArgb(0xFF, 0, 0xFF, 0x7F);
+    right = ColorHelper::FromArgb(0xFF, 0xFF, 0, 0x7F);
+    ShaderPanel->Children->Append(CreateShaderPair(left, right));
+
+    OuterView->Background = mOutsideMarkColor;
     mMainShaderPair->IsChecked = true;
 }
 
@@ -1123,6 +1153,7 @@ void SlitherLink::MainPage::Rectangle_Drop(Platform::Object^ sender, Windows::UI
     auto sourceColor = sourceBrush->Color;
     auto targetColor = targetBrush->Color;
 
+    ReplaceColor(sourceColor, targetColor);
 #if false
     String^ msg = "from ("
         + sourceColor.A + "," + sourceColor.R + "," + sourceColor.G + "," + sourceColor.B + ")"
@@ -1167,4 +1198,29 @@ void SlitherLink::MainPage::RadioButton_OnChecked(Platform::Object^ sender, Wind
     ShaderPair^ shader = (ShaderPair^)button->Tag;
     mCurrentLeftMarkCellColor = shader->Left;
     mCurrentRightMarkCellColor = shader->Right;
+}
+
+
+void SlitherLink::MainPage::ReplaceColor(Windows::UI::Color oldColor, Windows::UI::Color newColor)
+{
+    for (int i = mRowStart + 1; i < mRowEnd; i += 2)
+    {
+        for (int j = mColStart + 1; j < mColEnd; j += 2)
+        {
+            auto info = GetExtendedLoopAt(i, j);
+            Border^ view = (Border^)info->View;
+            SolidColorBrush^ brush = (SolidColorBrush^)view->Background;
+            Color color = brush->Color;
+            bool needReplace =
+                color.A == oldColor.A &&
+                color.R == oldColor.R &&
+                color.G == oldColor.G &&
+                color.B == oldColor.B;
+            if (needReplace)
+            {
+                view->Background = ref new SolidColorBrush(newColor);
+            }
+
+        }
+    }
 }
