@@ -12,13 +12,13 @@
 
 namespace SlitherLink
 {
-	/// <summary>
-	/// An empty page that can be used on its own or navigated to within a Frame.
-	/// </summary>
-	public ref class MainPage sealed
-	{
-	public:
-		MainPage();
+    /// <summary>
+    /// An empty page that can be used on its own or navigated to within a Frame.
+    /// </summary>
+    public ref class MainPage sealed
+    {
+    public:
+        MainPage();
 
     private:
         Windows::Foundation::Collections::IVector<byte>^ mLoop;
@@ -50,7 +50,7 @@ namespace SlitherLink
         int mExtendedRowSize;
         int mExtendedColSize;
 
-
+        void InitView();
         void Init(int row, int col);
         void InitHttpClient();
 
@@ -90,5 +90,11 @@ namespace SlitherLink
 
         inline byte GetLoopAt(int i, int j);
         inline GridItemInfo^ GetExtendedLoopAt(int i, int j);
+
+        Windows::UI::Xaml::Controls::RadioButton^ CreateShaderPair(Windows::UI::Color left, Windows::UI::Color right);
+        Platform::Object^ mDragObject;
+        void Rectangle_Drop(Platform::Object^ sender, Windows::UI::Xaml::DragEventArgs^ e);
+        void Rectangle_DragEnter(Platform::Object^ sender, Windows::UI::Xaml::DragEventArgs^ e);
+        void Rectangle_DragStarting(Windows::UI::Xaml::UIElement^ sender, Windows::UI::Xaml::DragStartingEventArgs^ args);
     };
 }

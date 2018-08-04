@@ -71,7 +71,9 @@ https://msdn.microsoft.com/en-us/library/ts4c4dw6.aspx
 
 MainPage::MainPage()
 {
-	InitializeComponent();
+    InitializeComponent();
+    InitView();
+
     mLoop = ref new Vector<byte>();
     mExtendedLoop = ref new Vector<GridItemInfo^>();
 
@@ -86,6 +88,15 @@ MainPage::MainPage()
 
     mUrl = "https://www.puzzle-loop.com";
     InitHttpClient();
+}
+
+
+void MainPage::InitView()
+{
+    //"Yellow" "Red"
+    ShaderPanel->Children->Append(CreateShaderPair(Colors::Yellow, Colors::Red));
+    //"Green" "Pink"
+    ShaderPanel->Children->Append(CreateShaderPair(Colors::Green, Colors::Pink));
 }
 
 
@@ -279,7 +290,14 @@ void MainPage::Init(int row, int col)
             {
                 info->Type = GridItemType::Dot;
                 info->Degree = 0;
+#if BUG_FIXED
                 if (!isExtendedItem)
+#else
+                if (isExtendedItem)
+                {
+                }
+                else
+#endif
                 {
                     view->Width = dotSize;
                     view->Height = dotSize;
@@ -1042,4 +1060,84 @@ inline byte SlitherLink::MainPage::GetLoopAt(int i, int j)
 inline GridItemInfo^ SlitherLink::MainPage::GetExtendedLoopAt(int i, int j)
 {
     return mExtendedLoop->GetAt(i * mExtendedColSize + j);
+}
+
+
+Windows::UI::Xaml::Controls::RadioButton^ SlitherLink::MainPage::CreateShaderPair(Windows::UI::Color left, Windows::UI::Color right)
+{
+    auto rectStyle = dynamic_cast<Windows::UI::Xaml::Style^>(this->Resources->Lookup("RectangleStyle1"));
+    auto buttonStyle = dynamic_cast<Windows::UI::Xaml::Style^>(this->Resources->Lookup("RadioButtonStyle1"));
+
+    Rectangle^ leftRect = ref new Rectangle();
+    leftRect->Style = rectStyle;
+    leftRect->Drop += ref new Windows::UI::Xaml::DragEventHandler(this, &SlitherLink::MainPage::Rectangle_Drop);
+    leftRect->DragStarting += ref new Windows::Foundation::TypedEventHandler<Windows::UI::Xaml::UIElement ^, Windows::UI::Xaml::DragStartingEventArgs ^>(this, &SlitherLink::MainPage::Rectangle_DragStarting);
+    leftRect->DragEnter += ref new Windows::UI::Xaml::DragEventHandler(this, &SlitherLink::MainPage::Rectangle_DragEnter);
+    leftRect->Fill = ref new SolidColorBrush(left);
+
+    Rectangle^ rightRect = ref new Rectangle();
+    rightRect->Style = rectStyle;
+    rightRect->Drop += ref new Windows::UI::Xaml::DragEventHandler(this, &SlitherLink::MainPage::Rectangle_Drop);
+    rightRect->DragStarting += ref new Windows::Foundation::TypedEventHandler<Windows::UI::Xaml::UIElement ^, Windows::UI::Xaml::DragStartingEventArgs ^>(this, &SlitherLink::MainPage::Rectangle_DragStarting);
+    rightRect->DragEnter += ref new Windows::UI::Xaml::DragEventHandler(this, &SlitherLink::MainPage::Rectangle_DragEnter);
+    rightRect->Fill = ref new SolidColorBrush(right);
+
+    StackPanel^ panel = ref new StackPanel();
+    panel->Orientation = Windows::UI::Xaml::Controls::Orientation::Horizontal;
+    panel->Children->Append(leftRect);
+    panel->Children->Append(rightRect);
+
+    RadioButton^ button = ref new RadioButton();
+    button->Style = buttonStyle;
+    button->Margin = Thickness(10, 10, 10, 10);
+    button->Content = panel;
+
+    return button;
+}
+
+
+void SlitherLink::MainPage::Rectangle_Drop(Platform::Object^ sender, Windows::UI::Xaml::DragEventArgs^ e)
+{
+    auto sourceRect = (Rectangle^)mDragObject;
+    auto targetRect = (Rectangle^)sender;
+
+    auto sourceBrush = (SolidColorBrush^)sourceRect->Fill;
+    auto targetBrush = (SolidColorBrush^)targetRect->Fill;
+
+    auto sourceColor = sourceBrush->Color;
+    auto targetColor = targetBrush->Color;
+
+    String^ msg = "from ("
+        + sourceColor.A + "," + sourceColor.R + "," + sourceColor.G + "," + sourceColor.B + ")"
+        + " to ("
+        + targetColor.A + "," + targetColor.R + "," + targetColor.G + "," + targetColor.B + ")";
+
+    auto dialog = ref new Windows::UI::Popups::MessageDialog(msg);
+    dialog->ShowAsync();
+}
+
+
+void SlitherLink::MainPage::Rectangle_DragEnter(Platform::Object^ sender, Windows::UI::Xaml::DragEventArgs^ e)
+{
+    auto sourceRect = (Rectangle^)mDragObject;
+    auto targetRect = (Rectangle^)sender;
+
+    auto sourceBrush = (SolidColorBrush^)sourceRect->Fill;
+    auto targetBrush = (SolidColorBrush^)targetRect->Fill;
+
+    auto sourceColor = sourceBrush->Color;
+    auto targetColor = targetBrush->Color;
+
+    if (sourceBrush->Equals(targetBrush))
+    {
+        return;
+    }
+
+    e->AcceptedOperation = Windows::ApplicationModel::DataTransfer::DataPackageOperation::Move;
+}
+
+
+void SlitherLink::MainPage::Rectangle_DragStarting(Windows::UI::Xaml::UIElement^ sender, Windows::UI::Xaml::DragStartingEventArgs^ args)
+{
+    mDragObject = sender;
 }
