@@ -100,37 +100,17 @@ void MainPage::InitView()
     mLineMarkColor = ref new SolidColorBrush(Colors::Black);
     mCrossMarkColor = ref new SolidColorBrush(Colors::Red);
 
-    //"#FF0000" "#00FFFF"
-    left = ColorHelper::FromArgb(0xFF, 0xFF, 0, 0);
-    right = ColorHelper::FromArgb(0xFF, 0, 0xFF, 0xFF);
+    //"Green" "SkyBlue"
+    left = Colors::Green;
+    right = Colors::SkyBlue;
     mInsideMarkColor = ref new SolidColorBrush(left);
     mOutsideMarkColor = ref new SolidColorBrush(right);
     mMainShaderPair = CreateShaderPair(mInsideMarkColor, mOutsideMarkColor);
     ShaderPanel->Children->Append(mMainShaderPair);
 
-    //"#00FF00" "#FF00FF"
-    left = ColorHelper::FromArgb(0xFF, 0, 0xFF, 0);
-    right = ColorHelper::FromArgb(0xFF, 0xFF, 0, 0xFF);
-    ShaderPanel->Children->Append(CreateShaderPair(left, right));
-
-    //"#0000FF" "#FFFF00"
-    left = ColorHelper::FromArgb(0xFF, 0, 0, 0xFF);
-    right = ColorHelper::FromArgb(0xFF, 0xFF, 0xFF, 0);
-    ShaderPanel->Children->Append(CreateShaderPair(left, right));
-
     //"#FF7F00" "#007FFF"
     left = ColorHelper::FromArgb(0xFF, 0xFF, 0x7F, 0);
     right = ColorHelper::FromArgb(0xFF, 0, 0x7F, 0xFF);
-    ShaderPanel->Children->Append(CreateShaderPair(left, right));
-
-    //"#7FFF00" "#7F00FF"
-    left = ColorHelper::FromArgb(0xFF, 0x7F, 0xFF, 0x00);
-    right = ColorHelper::FromArgb(0xFF, 0x7F, 0x00, 0xFF);
-    ShaderPanel->Children->Append(CreateShaderPair(left, right));
-
-    //"#00FF7F" "#FF007F"
-    left = ColorHelper::FromArgb(0xFF, 0, 0xFF, 0x7F);
-    right = ColorHelper::FromArgb(0xFF, 0xFF, 0, 0x7F);
     ShaderPanel->Children->Append(CreateShaderPair(left, right));
 
     OuterView->Background = mOutsideMarkColor;
