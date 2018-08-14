@@ -1365,9 +1365,9 @@ void SlitherLink::MainPage::MergeSlotButton_Click(Platform::Object^ sender, Wind
             {
                 continue;
             }
+            auto view = info->View;
             if (info->StateSlotA == info->StateSlotB && info->StateSlotA != GridItemState::None)
             {
-                auto view = info->View;
                 switch (info->Type)
                 {
                 case GridItemType::HorizontailLine:
@@ -1380,9 +1380,6 @@ void SlitherLink::MainPage::MergeSlotButton_Click(Platform::Object^ sender, Wind
                     case GridItemState::Cross:
                         SetCross(view, true);
                         break;
-                    case GridItemState::None:
-                        SetErase(view, true);
-                        break;
                     }
                     break;
                 case GridItemType::Cell:
@@ -1394,12 +1391,13 @@ void SlitherLink::MainPage::MergeSlotButton_Click(Platform::Object^ sender, Wind
                     case GridItemState::OutSide:
                         SetOutside(view, true);
                         break;
-                    case GridItemState::None:
-                        SetErase(view, true);
-                        break;
                     }
                     break;
                 }
+            }
+            else
+            {
+                SetErase(view, true);
             }
             info->StateSlotA = GridItemState::None;
             info->StateSlotB = GridItemState::None;
