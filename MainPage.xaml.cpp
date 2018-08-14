@@ -81,6 +81,7 @@ MainPage::MainPage()
 
     mEnableSetSide = true;
     mEnableSetCell = false;
+    mStateSlot = StateSlot::Default;
 
     InitView();
 
@@ -115,6 +116,7 @@ void MainPage::InitView()
 
     OuterView->Background = mOutsideMarkColor;
     mMainShaderPair->IsChecked = true;
+    StateSlot_Default_Button->IsChecked = true;
 }
 
 
@@ -530,9 +532,9 @@ void MainPage::Grid_PointerEntered(Platform::Object^ sender, Windows::UI::Xaml::
 }
 
 
-void MainPage::SetInside(Windows::UI::Xaml::Controls::Border^ item)
+void MainPage::SetInside(Windows::UI::Xaml::Controls::Border^ item, bool force)
 {
-    if (!mEnableSetCell)
+    if (!mEnableSetCell && !force)
     {
         return;
     }
@@ -543,12 +545,13 @@ void MainPage::SetInside(Windows::UI::Xaml::Controls::Border^ item)
     }
     info->State = GridItemState::InSide;
     item->Background = mCurrentLeftMarkCellColor;
+    UpdateStateSlot(info, info->State);
 }
 
 
-void MainPage::SetOutside(Windows::UI::Xaml::Controls::Border^ item)
+void MainPage::SetOutside(Windows::UI::Xaml::Controls::Border^ item, bool force)
 {
-    if (!mEnableSetCell)
+    if (!mEnableSetCell && !force)
     {
         return;
     }
@@ -559,12 +562,13 @@ void MainPage::SetOutside(Windows::UI::Xaml::Controls::Border^ item)
     }
     info->State = GridItemState::OutSide;
     item->Background = mCurrentRightMarkCellColor;
+    UpdateStateSlot(info, info->State);
 }
 
 
-void MainPage::SetLine(Windows::UI::Xaml::Controls::Border^ item)
+void MainPage::SetLine(Windows::UI::Xaml::Controls::Border^ item, bool force)
 {
-    if (!mEnableSetSide)
+    if (!mEnableSetSide && !force)
     {
         return;
     }
@@ -576,12 +580,13 @@ void MainPage::SetLine(Windows::UI::Xaml::Controls::Border^ item)
     info->State = GridItemState::Line;
     item->Background = mLineMarkColor;
     item->Child = nullptr;
+    UpdateStateSlot(info, info->State);
 }
 
 
-void MainPage::SetCross(Windows::UI::Xaml::Controls::Border^ item)
+void MainPage::SetCross(Windows::UI::Xaml::Controls::Border^ item, bool force)
 {
-    if (!mEnableSetSide)
+    if (!mEnableSetSide && !force)
     {
         return;
     }
@@ -592,6 +597,7 @@ void MainPage::SetCross(Windows::UI::Xaml::Controls::Border^ item)
     }
     info->State = GridItemState::Cross;
     item->Background = mTransparentColor;
+    UpdateStateSlot(info, info->State);
 
     auto viewBox = ref new Viewbox();
     FontIcon^ icon = ref new FontIcon();
@@ -605,7 +611,7 @@ void MainPage::SetCross(Windows::UI::Xaml::Controls::Border^ item)
 }
 
 
-void MainPage::SetErase(Windows::UI::Xaml::Controls::Border^ item)
+void MainPage::SetErase(Windows::UI::Xaml::Controls::Border^ item, bool force)
 {
     auto info = (GridItemInfo^)item->Tag;
     if (info->IsLocked)
@@ -615,14 +621,14 @@ void MainPage::SetErase(Windows::UI::Xaml::Controls::Border^ item)
     switch (info->Type)
     {
     case GridItemType::Cell:
-        if (!mEnableSetCell)
+        if (!mEnableSetCell && !force)
         {
             return;
         }
         break;
     case GridItemType::HorizontailLine:
     case GridItemType::VerticalLine:
-        if (!mEnableSetSide)
+        if (!mEnableSetSide && !force)
         {
             return;
         }
@@ -631,6 +637,7 @@ void MainPage::SetErase(Windows::UI::Xaml::Controls::Border^ item)
     }
     info->State = GridItemState::None;
     item->Background = mTransparentColor;
+    UpdateStateSlot(info, info->State);
 }
 
 
@@ -1128,6 +1135,7 @@ Windows::UI::Xaml::Controls::RadioButton^ SlitherLink::MainPage::CreateShaderPai
     panel->Children->Append(rightRect);
 
     RadioButton^ button = ref new RadioButton();
+    button->GroupName = "ShaderPairGroup";
     button->Style = buttonStyle;
     button->Margin = Thickness(10, 10, 10, 10);
     button->Content = panel;
@@ -1307,6 +1315,94 @@ void SlitherLink::MainPage::ResetGameButton_Click(Platform::Object^ sender, Wind
             info->State = GridItemState::None;
             info->View->Background = mTransparentColor;
             info->IsLocked = false;
+        }
+    }
+}
+
+
+void SlitherLink::MainPage::StateSlot_Default_Button_Checked(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+{
+    mStateSlot = StateSlot::Default;
+}
+
+
+void SlitherLink::MainPage::StateSlot_A_Button_Checked(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+{
+    mStateSlot = StateSlot::SlotA;
+}
+
+
+void SlitherLink::MainPage::StateSlot_B_Button_Checked(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+{
+    mStateSlot = StateSlot::SlotB;
+}
+
+
+void SlitherLink::MainPage::UpdateStateSlot(GridItemInfo^ info, GridItemState state)
+{
+    switch (mStateSlot)
+    {
+    case StateSlot::SlotA:
+        info->StateSlotA = state;
+        break;
+    case StateSlot::SlotB:
+        info->StateSlotB = state;
+        break;
+    }
+}
+
+
+void SlitherLink::MainPage::MergeSlotButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+{
+    StateSlot_Default_Button->IsChecked = true;
+    mStateSlot = StateSlot::Default;
+    for (int i = mRowStart; i <= mRowEnd; i++)
+    {
+        for (int j = mColStart; j <= mColEnd; j++)
+        {
+            auto info = GetExtendedLoopAt(i, j);
+            if (info->Type == GridItemType::Dot)
+            {
+                continue;
+            }
+            if (info->StateSlotA == info->StateSlotB && info->StateSlotA != GridItemState::None)
+            {
+                auto view = info->View;
+                switch (info->Type)
+                {
+                case GridItemType::HorizontailLine:
+                case GridItemType::VerticalLine:
+                    switch (info->StateSlotA)
+                    {
+                    case GridItemState::Line:
+                        SetLine(view, true);
+                        break;
+                    case GridItemState::Cross:
+                        SetCross(view, true);
+                        break;
+                    case GridItemState::None:
+                        SetErase(view, true);
+                        break;
+                    }
+                    break;
+                case GridItemType::Cell:
+                    switch (info->StateSlotA)
+                    {
+                    case GridItemState::InSide:
+                        SetInside(view, true);
+                        break;
+                    case GridItemState::OutSide:
+                        SetOutside(view, true);
+                        break;
+                    case GridItemState::None:
+                        SetErase(view, true);
+                        break;
+                    }
+                    break;
+                }
+            }
+            info->StateSlotA = GridItemState::None;
+            info->StateSlotB = GridItemState::None;
         }
     }
 }

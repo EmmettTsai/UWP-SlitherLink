@@ -112,6 +112,28 @@ namespace SlitherLink
                 m_isLocked = isLocked;
             }
         }
+        property GridItemState StateSlotA
+        {
+            GridItemState get()
+            {
+                return m_state_slot_a;
+            }
+            void set(GridItemState state)
+            {
+                m_state_slot_a = state;
+            }
+        }
+        property GridItemState StateSlotB
+        {
+            GridItemState get()
+            {
+                return m_state_slot_b;
+            }
+            void set(GridItemState state)
+            {
+                m_state_slot_b = state;
+            }
+        }
     private:
         GridItemType m_type;
         GridItemState m_state;
@@ -122,6 +144,9 @@ namespace SlitherLink
         bool m_handled;
         bool m_isExtended;
         bool m_isLocked;
+
+        GridItemState m_state_slot_a;
+        GridItemState m_state_slot_b;
     };
 
 }

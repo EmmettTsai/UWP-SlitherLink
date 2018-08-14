@@ -226,6 +226,13 @@
             </Grid.ColumnDefinitions>
             <StackPanel Background="{ThemeResource SystemControlBackgroundBaseLowBrush}">
                 <StackPanel Margin="10,10,10,10">
+                    <TextBlock Text="State Slot" HorizontalAlignment="Center"/>
+                    <RadioButton x:Name="StateSlot_Default_Button" GroupName="StateSlotGroup" Content="Default" Checked="StateSlot_Default_Button_Checked"/>
+                    <RadioButton x:Name="StateSlot_A_Button" GroupName="StateSlotGroup" Content="Slot A" Checked="StateSlot_A_Button_Checked"/>
+                    <RadioButton x:Name="StateSlot_B_Button" GroupName="StateSlotGroup" Content="Slot B" Checked="StateSlot_B_Button_Checked"/>
+                    <Button x:Name="MergeSlotButton" Content="Merge Slot" HorizontalAlignment="Center" Click="MergeSlotButton_Click"/>
+                </StackPanel>
+                <StackPanel Margin="10,10,10,10">
                     <Button
                         x:Name="LockButton"
                         Content="Lock"

@@ -12,6 +12,13 @@
 
 namespace SlitherLink
 {
+    public enum class StateSlot : int
+    {
+        Default,
+        SlotA,
+        SlotB,
+    };
+
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
@@ -21,6 +28,7 @@ namespace SlitherLink
         MainPage();
 
     private:
+        StateSlot mStateSlot;
         Windows::Foundation::Collections::IVector<byte>^ mLoop;
         Windows::Foundation::Collections::IVector<GridItemInfo^>^ mExtendedLoop;
         Windows::Foundation::Collections::IVector<Platform::String^>^ mRule;
@@ -62,11 +70,11 @@ namespace SlitherLink
 
         Windows::UI::Xaml::Media::Geometry^ PathMarkupToGeometry(Platform::String^ pathMarkup);
 
-        void SetInside(Windows::UI::Xaml::Controls::Border^ item);
-        void SetOutside(Windows::UI::Xaml::Controls::Border^ item);
-        void SetLine(Windows::UI::Xaml::Controls::Border^ item);
-        void SetCross(Windows::UI::Xaml::Controls::Border^ item);
-        void SetErase(Windows::UI::Xaml::Controls::Border^ item);
+        void SetInside(Windows::UI::Xaml::Controls::Border^ item, bool force = false);
+        void SetOutside(Windows::UI::Xaml::Controls::Border^ item, bool force = false);
+        void SetLine(Windows::UI::Xaml::Controls::Border^ item, bool force = false);
+        void SetCross(Windows::UI::Xaml::Controls::Border^ item, bool force = false);
+        void SetErase(Windows::UI::Xaml::Controls::Border^ item, bool force = false);
 
         void SetCell(Windows::UI::Xaml::Controls::Border^ item, IndicatorState state);
         void SetSide(Windows::UI::Xaml::Controls::Border^ item, IndicatorState state);
@@ -106,5 +114,10 @@ namespace SlitherLink
         void UnlockButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void ResetToLockedButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void ResetGameButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+        void StateSlot_Default_Button_Checked(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+        void StateSlot_A_Button_Checked(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+        void StateSlot_B_Button_Checked(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+        void UpdateStateSlot(GridItemInfo^ info, GridItemState state);
+        void MergeSlotButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
     };
 }
