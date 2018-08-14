@@ -8,6 +8,11 @@ namespace SlitherLink
     public ref class GridItemInfo sealed
     {
     public:
+        GridItemInfo()
+        {
+            m_isLocked = false;
+        }
+
         property GridItemType Type
         {
             GridItemType get()
@@ -96,6 +101,17 @@ namespace SlitherLink
                 m_isExtended = isExtended;
             }
         }
+        property bool IsLocked
+        {
+            bool get()
+            {
+                return m_isLocked;
+            }
+            void set(bool isLocked)
+            {
+                m_isLocked = isLocked;
+            }
+        }
     private:
         GridItemType m_type;
         GridItemState m_state;
@@ -105,6 +121,7 @@ namespace SlitherLink
         int m_degree;
         bool m_handled;
         bool m_isExtended;
+        bool m_isLocked;
     };
 
 }

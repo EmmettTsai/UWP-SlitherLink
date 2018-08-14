@@ -537,6 +537,10 @@ void MainPage::SetInside(Windows::UI::Xaml::Controls::Border^ item)
         return;
     }
     auto info = (GridItemInfo^)item->Tag;
+    if (info->IsLocked)
+    {
+        return;
+    }
     info->State = GridItemState::InSide;
     item->Background = mCurrentLeftMarkCellColor;
 }
@@ -549,6 +553,10 @@ void MainPage::SetOutside(Windows::UI::Xaml::Controls::Border^ item)
         return;
     }
     auto info = (GridItemInfo^)item->Tag;
+    if (info->IsLocked)
+    {
+        return;
+    }
     info->State = GridItemState::OutSide;
     item->Background = mCurrentRightMarkCellColor;
 }
@@ -561,6 +569,10 @@ void MainPage::SetLine(Windows::UI::Xaml::Controls::Border^ item)
         return;
     }
     auto info = (GridItemInfo^)item->Tag;
+    if (info->IsLocked)
+    {
+        return;
+    }
     info->State = GridItemState::Line;
     item->Background = mLineMarkColor;
     item->Child = nullptr;
@@ -574,6 +586,10 @@ void MainPage::SetCross(Windows::UI::Xaml::Controls::Border^ item)
         return;
     }
     auto info = (GridItemInfo^)item->Tag;
+    if (info->IsLocked)
+    {
+        return;
+    }
     info->State = GridItemState::Cross;
     item->Background = mTransparentColor;
 
@@ -592,6 +608,10 @@ void MainPage::SetCross(Windows::UI::Xaml::Controls::Border^ item)
 void MainPage::SetErase(Windows::UI::Xaml::Controls::Border^ item)
 {
     auto info = (GridItemInfo^)item->Tag;
+    if (info->IsLocked)
+    {
+        return;
+    }
     switch (info->Type)
     {
     case GridItemType::Cell:
@@ -606,15 +626,11 @@ void MainPage::SetErase(Windows::UI::Xaml::Controls::Border^ item)
         {
             return;
         }
-        myLogW(LOG_DEBUG, LTAG L"[%d][%s]", __LINE__, __funcw__);
         item->Child = nullptr;
-        myLogW(LOG_DEBUG, LTAG L"[%d][%s]", __LINE__, __funcw__);
         break;
     }
     info->State = GridItemState::None;
-    myLogW(LOG_DEBUG, LTAG L"[%d][%s]", __LINE__, __funcw__);
     item->Background = mTransparentColor;
-    myLogW(LOG_DEBUG, LTAG L"[%d][%s]", __LINE__, __funcw__);
 }
 
 
@@ -1200,7 +1216,97 @@ void SlitherLink::MainPage::ReplaceColor(Windows::UI::Color oldColor, Windows::U
             {
                 view->Background = ref new SolidColorBrush(newColor);
             }
+        }
+    }
+}
 
+
+void SlitherLink::MainPage::LockButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+{
+    for (int i = mRowStart; i <= mRowEnd; i++)
+    {
+        for (int j = mColStart; j <= mColEnd; j++)
+        {
+            auto info = GetExtendedLoopAt(i, j);
+            if (info->Type == GridItemType::Dot)
+            {
+                continue;
+            }
+            if (info->State != GridItemState::None)
+            {
+                info->IsLocked = true;
+            }
+        }
+    }
+}
+
+
+void SlitherLink::MainPage::UnlockButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+{
+    for (int i = mRowStart; i <= mRowEnd; i++)
+    {
+        for (int j = mColStart; j <= mColEnd; j++)
+        {
+            auto info = GetExtendedLoopAt(i, j);
+            if (info->Type == GridItemType::Dot)
+            {
+                continue;
+            }
+            info->IsLocked = false;
+        }
+    }
+}
+
+
+void SlitherLink::MainPage::ResetToLockedButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+{
+    for (int i = mRowStart; i <= mRowEnd; i++)
+    {
+        for (int j = mColStart; j <= mColEnd; j++)
+        {
+            auto info = GetExtendedLoopAt(i, j);
+            if (info->Type == GridItemType::Dot)
+            {
+                continue;
+            }
+            if (!info->IsLocked && info->State != GridItemState::None)
+            {
+                switch (info->Type)
+                {
+                case GridItemType::HorizontailLine:
+                case GridItemType::VerticalLine:
+                    info->View->Child = nullptr;
+                    break;
+                }
+                info->State = GridItemState::None;
+                info->View->Background = mTransparentColor;
+            }
+        }
+    }
+}
+
+
+void SlitherLink::MainPage::ResetGameButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+{
+    for (int i = mRowStart; i <= mRowEnd; i++)
+    {
+        for (int j = mColStart; j <= mColEnd; j++)
+        {
+            auto info = GetExtendedLoopAt(i, j);
+            if (info->Type == GridItemType::Dot)
+            {
+                continue;
+            }
+            switch (info->Type)
+            {
+            case GridItemType::HorizontailLine:
+            case GridItemType::VerticalLine:
+                info->View->Child = nullptr;
+                break;
+            }
+            info->State = GridItemState::None;
+            info->View->Background = mTransparentColor;
+            info->IsLocked = false;
         }
     }
 }
