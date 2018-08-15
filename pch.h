@@ -9,3 +9,5 @@
 
 #include "App.xaml.h"
 #include "log.h"
+
+#define BUG_FIXED false
