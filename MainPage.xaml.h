@@ -119,5 +119,7 @@ namespace SlitherLink
         void StateSlot_B_Button_Checked(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void UpdateStateSlot(GridItemInfo^ info, GridItemState state);
         void MergeSlotButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+        void ClearSlotA_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+        void ClearSlotB_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
     };
 }

@@ -1404,3 +1404,37 @@ void SlitherLink::MainPage::MergeSlotButton_Click(Platform::Object^ sender, Wind
         }
     }
 }
+
+
+void SlitherLink::MainPage::ClearSlotA_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+{
+    for (int i = mRowStart; i <= mRowEnd; i++)
+    {
+        for (int j = mColStart; j <= mColEnd; j++)
+        {
+            auto info = GetExtendedLoopAt(i, j);
+            if (info->Type == GridItemType::Dot)
+            {
+                continue;
+            }
+            info->StateSlotA = GridItemState::None;
+        }
+    }
+}
+
+
+void SlitherLink::MainPage::ClearSlotB_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+{
+    for (int i = mRowStart; i <= mRowEnd; i++)
+    {
+        for (int j = mColStart; j <= mColEnd; j++)
+        {
+            auto info = GetExtendedLoopAt(i, j);
+            if (info->Type == GridItemType::Dot)
+            {
+                continue;
+            }
+            info->StateSlotB = GridItemState::None;
+        }
+    }
+}
