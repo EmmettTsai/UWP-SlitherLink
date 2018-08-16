@@ -366,7 +366,7 @@ void MainPage::Init(int row, int col)
                     TextBlock^ text = ref new TextBlock();
                     text->HorizontalAlignment = Windows::UI::Xaml::HorizontalAlignment::Center;
                     text->VerticalAlignment = Windows::UI::Xaml::VerticalAlignment::Center;
-                    text->Text = info->Degree > 0 ? info->Degree.ToString() : "";
+                    text->Text = info->Degree >= 0 ? info->Degree.ToString() : "";
                     view->Child = text;
 
                     Canvas::SetZIndex(view, 0);
