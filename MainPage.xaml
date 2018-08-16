@@ -14,6 +14,27 @@
             <RowDefinition/>
         </Grid.RowDefinitions>
         <CommandBar>
+            <CommandBar.Content>
+                <StackPanel Orientation="Horizontal">
+                    <ComboBox x:Name="LoopSizeBox" SelectedIndex="0" Width="300" FontSize="24" HorizontalContentAlignment="Center">
+                        <x:String>5x5 Loop Normal</x:String>
+                        <x:String>5x5 Loop Hard</x:String>
+                        <x:String>7x7 Loop Normal</x:String>
+                        <x:String>7x7 Loop Hard</x:String>
+                        <x:String>10x10 Loop Normal</x:String>
+                        <x:String>10x10 Loop Hard</x:String>
+                        <x:String>15x15 Loop Normal</x:String>
+                        <x:String>15x15 Loop Hard</x:String>
+                        <x:String>20x20 Loop Normal</x:String>
+                        <x:String>20x20 Loop Hard</x:String>
+                        <x:String>25x30 Loop Normal</x:String>
+                        <x:String>25x30 Loop Hard</x:String>
+                        <x:String>Special Daily Loop</x:String>
+                        <x:String>Special Weekly Loop</x:String>
+                        <x:String>Special Monthly Loop</x:String>
+                    </ComboBox>
+                </StackPanel>
+            </CommandBar.Content>
             <AppBarToggleButton
                 x:Name="SideToggleButton"
                 Width="120"
@@ -48,7 +69,10 @@
                 Label="Open File"
                 Click="OpenFileButton_Click"/>
         </CommandBar>
-        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" Background="SkyBlue">
+        <ScrollViewer
+            Grid.Row="1"
+            HorizontalScrollBarVisibility="Auto"
+            Background="SkyBlue">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -65,32 +89,5 @@
                 <Canvas x:Name="RootCanvas" Grid.Row="1" Margin="50,50,50,50"/>
             </Grid>
         </ScrollViewer>
-
-        <Border Grid.Row="1" Width="30" Height="10" Visibility="Collapsed">
-            <Viewbox>
-                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xe8bb;"/>
-            </Viewbox>
-        </Border>
-        <Border Grid.Row="1" Width="10" Height="30" Visibility="Collapsed">
-            <Viewbox>
-                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xe8bb;"/>
-            </Viewbox>
-        </Border>
-        <Border Grid.Row="1" Canvas.ZIndex="1" Canvas.Left="10" Canvas.Top="0" Width="30" Height="10" Background="Green" Visibility="Collapsed">
-            <Viewbox>
-                <Canvas Width="100" Height="100">
-                    <Path Width="100" Height="100" Stretch="Fill" StrokeThickness="15" StrokeLineJoin="Round" Stroke="Red" Data="F1 M 7.5,7.5L 92.5,92.5"/>
-                    <Path Width="100" Height="100" Stretch="Fill" StrokeThickness="15" StrokeLineJoin="Round" Stroke="Red" Data="F1 M 7.5,92.5L 92.5,7.5"/>
-                </Canvas>
-            </Viewbox>
-        </Border>
-        <Border Grid.Row="1" Canvas.ZIndex="1" Canvas.Left="10" Canvas.Top="0" Width="10" Height="30" Background="Green" Visibility="Collapsed">
-            <Viewbox>
-                <Canvas Width="100" Height="100">
-                    <Path Width="100" Height="100" Stretch="Fill" StrokeThickness="15" StrokeLineJoin="Round" Stroke="Red" Data="F1 M 7.5,7.5L 92.5,92.5"/>
-                    <Path Width="100" Height="100" Stretch="Fill" StrokeThickness="15" StrokeLineJoin="Round" Stroke="Red" Data="F1 M 7.5,92.5L 92.5,7.5"/>
-                </Canvas>
-            </Viewbox>
-        </Border>
     </Grid>
 </Page>

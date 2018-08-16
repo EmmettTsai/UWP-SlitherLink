@@ -38,32 +38,12 @@ using namespace Windows::Web::Http;
 using namespace Windows::Web::Http::Filters;
 using namespace Windows::Web::Http::Headers;
 
-// The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
 /*
 https://developercommunity.visualstudio.com/content/problem/263131/co-await-optimization-bugs-in-visual-studio-157-x6.html
 There is a hidden cl.exe switch "/d2CoroOptsWorkaround" to disable optimizations on all coroutines being compiled. I recommend only using it until you get the Preview 5 bits as this will disable all optimizations on the coroutine, resulting in worse code generation. Sometime in the future, this switch will not do anything.
 
 https://docs.microsoft.com/en-us/windows/uwp/design/style/icons
 https://docs.microsoft.com/en-us/windows/uwp/design/style/segoe-ui-symbol-font
-
-<AppBarToggleButton Label="FontIcon" Click="AppBarButton_Click">
-    <AppBarToggleButton.Icon>
-        <FontIcon FontFamily="Candara" Glyph="&#x03A3;"/>
-    </AppBarToggleButton.Icon>
-</AppBarToggleButton>
-
-<AppBarButton Label="BitmapIcon" Click="AppBarButton_Click">
-    <AppBarButton.Icon>
-        <BitmapIcon UriSource="ms-appx:///Assets/globe.png"/>
-    </AppBarButton.Icon>
-</AppBarButton>
-
-<!-- App bar button with path icon. -->
-<AppBarButton Label="PathIcon" Click="AppBarButton_Click">
-    <AppBarButton.Icon>
-        <PathIcon Data="F1 M 16,12 20,2L 20,16 1,16" HorizontalAlignment="Center"/>
-    </AppBarButton.Icon>
-</AppBarButton>
 
 https://stackoverflow.com/questions/50511876/how-to-set-bitmapicon-or-pathicon-content-from-canvas-stored-in-resource-d
 
@@ -86,30 +66,10 @@ https://blog.csdn.net/mycwq/article/details/18838151
 http://tommyjswu-blog.logdown.com/posts/726230-cpp11-regex-expression
 */
 
-/*
-https://www.puzzle-loop.com
-https://www.puzzle-loop.com/?size=0
-5x5 Loop Normal		0
-5x5 Loop Hard		4
-7x7 Loop Normal		10
-7x7 Loop Hard		11
-10x10 Loop Normal	1
-10x10 Loop Hard		5
-15x15 Loop Normal	2
-15x15 Loop Hard		6
-20x20 Loop Normal	3
-20x20 Loop Hard		7
-25x30 Loop Normal	8
-25x30 Loop Hard		9
-Special Daily Loop	13
-Special Weekly Loop	12
-Special Monthly Loop	14
-*/
-
 MainPage::MainPage()
 {
 	InitializeComponent();
-    mMap = ref new Vector<IVector<byte>^>();
+    mLoop = ref new Vector<IVector<byte>^>();
 
     mEnableSetSide = true;
     mEnableSetCell = false;
@@ -120,8 +80,13 @@ MainPage::MainPage()
     mLineMarkColor = ref new SolidColorBrush(Colors::Black);
     mCrossMarkColor = ref new SolidColorBrush(Colors::Red);
 
-    //mUrl = "https://www.puzzle-loop.com";
-    mUrl = "https://www.puzzle-loop.com/?size=9";
+    mUrl = "https://www.puzzle-loop.com";
+    InitHttpClient();
+}
+
+
+void MainPage::InitHttpClient()
+{
     mHttpFilter = ref new HttpBaseProtocolFilter();
     mHttpFilter->CacheControl->ReadBehavior = HttpCacheReadBehavior::NoCache;
     mHttpFilter->CacheControl->WriteBehavior = HttpCacheWriteBehavior::NoCache;
@@ -241,6 +206,9 @@ MainPage::MainPage()
 
 void MainPage::Init(int row, int col)
 {
+    // TODO: need clear previous event handler?
+    RootCanvas->Children->Clear();
+
     int dotSize = 10;
     double halfDotSize = dotSize * 0.5;
     int cellSize = 30;
@@ -305,7 +273,7 @@ void MainPage::Init(int row, int col)
                 text->HorizontalAlignment = Windows::UI::Xaml::HorizontalAlignment::Center;
                 text->VerticalAlignment = Windows::UI::Xaml::VerticalAlignment::Center;
 
-                switch (mMap->GetAt(dataRow)->GetAt(dataCol))
+                switch (mLoop->GetAt(dataRow)->GetAt(dataCol))
                 {
                 case '0':
                     text->Text = "0";
@@ -361,6 +329,7 @@ void MainPage::Init(int row, int col)
 void MainPage::Grid_PointerPressed(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e)
 {
     myLogW(LOG_VERBOSE, LTAG L"[%d][%s]", __LINE__, __funcw__);
+    mIndicatorState = IndicatorState::None;
     Pointer^ pointer = e->Pointer;
     if (pointer->PointerDeviceType == PointerDeviceType::Mouse)
     {
@@ -390,6 +359,7 @@ void MainPage::Grid_PointerPressed(Platform::Object^ sender, Windows::UI::Xaml::
 void MainPage::Grid_PointerReleased(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e)
 {
     myLogW(LOG_VERBOSE, LTAG L"[%d][%s]", __LINE__, __funcw__);
+    mIndicatorState = IndicatorState::None;
 }
 
 
@@ -416,10 +386,18 @@ void MainPage::Grid_PointerEntered(Platform::Object^ sender, Windows::UI::Xaml::
         {
         case GridItemType::Cell:
             myLogW(LOG_DEBUG, LTAG L"[%d][%s] type is Cell", __LINE__, __funcw__);
+            if (!mEnableSetCell)
+            {
+                return;
+            }
             break;
         case GridItemType::HorizontailLine:
         case GridItemType::VerticalLine:
             myLogW(LOG_DEBUG, LTAG L"[%d][%s] type is Side", __LINE__, __funcw__);
+            if (!mEnableSetSide)
+            {
+                return;
+            }
             break;
         }
         myLogW(LOG_DEBUG, LTAG L"[%d][%s] leftPress = %d", __LINE__, __funcw__, leftPress);
@@ -736,7 +714,7 @@ task<void> SlitherLink::MainPage::ReadTextFile(StorageFile^ file)
     sscanf_s(ptr, "%d %d%*[\r\n]%n", &row, &col, &pos);
     ptr += pos;
     myLogW(LOG_INFO, LTAG L"row = %d, col = %d, pos = %d", row, col, pos);
-
+    mLoop->Clear();
     for (int i = 0; i < row; i++)
     {
         myLogW(LOG_DEBUG, LTAG L"------------- row = %d -------------", i);
@@ -753,7 +731,7 @@ task<void> SlitherLink::MainPage::ReadTextFile(StorageFile^ file)
         sscanf_s(ptr, "%*[\r\n]%n", &pos);
         myLogW(LOG_DEBUG, LTAG L"[%d] pos = %d", i, pos);
         ptr += pos;
-        mMap->Append(arr);
+        mLoop->Append(arr);
     }
 
     delete buf;
@@ -787,12 +765,12 @@ void SlitherLink::MainPage::OpenFileButton_Click(Platform::Object^ sender, Windo
         if (file != nullptr)
         {
             create_task(ReadTextFile(file)).then([this]() {
-                int row = mMap->Size;
+                int row = mLoop->Size;
                 if (row < 0)
                 {
                     return;
                 }
-                int col = mMap->GetAt(0)->Size;
+                int col = mLoop->GetAt(0)->Size;
                 if (col < 0)
                 {
                     return;
@@ -858,18 +836,21 @@ void SlitherLink::MainPage::LoadFromUrlButton_Click(Platform::Object^ sender, Wi
         }
     });
 #else
-    Uri^ uri = ref new Uri(mUrl);
+    int size = LoopSizeBox->SelectedIndex;
+    String^ loopName = (String^)LoopSizeBox->SelectedItem;
+    myLogW(LOG_INFO, LTAG L"selected loop size = %d, name = %s", size, loopName->Data());
+    Uri^ uri = ref new Uri(mUrl + "/?size=" + size);
     create_task(mHttpClient->GetAsync(uri)).then([this](HttpResponseMessage^ response) {
         create_task(response->Content->ReadAsStringAsync()).then([this](String^ responseBodyAsText) {
             this->Dispatcher->RunAsync(CoreDispatcherPriority::Normal, ref new DispatchedHandler([this, responseBodyAsText]() {
                 if (ParseHtmlText(responseBodyAsText))
                 {
-                    int row = mMap->Size;
+                    int row = mLoop->Size;
                     if (row < 0)
                     {
                         return;
                     }
-                    int col = mMap->GetAt(0)->Size;
+                    int col = mLoop->GetAt(0)->Size;
                     if (col < 0)
                     {
                         return;
@@ -899,6 +880,8 @@ bool SlitherLink::MainPage::ParseHtmlText(Platform::String^ content)
     std::wregex regex;
     std::wsmatch matchs;
     std::wstring str(content->Data());
+    int row;
+    int col;
 
     // get puzzle id
     pattern.assign(L"Puzzle ID: [\\d,]+(?=</p>)");
@@ -919,8 +902,8 @@ bool SlitherLink::MainPage::ParseHtmlText(Platform::String^ content)
     regex.assign(pattern);
     if (std::regex_search(str, matchs, regex))
     {
-        mRow = std::stoi(matchs[0].str().substr(wcslen(L"name=\"h\" value=\"")).c_str());
-        myLog(LOG_INFO, TAG "mRow = %d", mRow);
+        row = std::stoi(matchs[0].str().substr(wcslen(L"name=\"h\" value=\"")).c_str());
+        myLog(LOG_INFO, TAG "row = %d", row);
     }
     else
     {
@@ -933,8 +916,8 @@ bool SlitherLink::MainPage::ParseHtmlText(Platform::String^ content)
     regex.assign(pattern);
     if (std::regex_search(str, matchs, regex))
     {
-        mCol = std::stoi(matchs[0].str().substr(wcslen(L"name=\"w\" value=\"")).c_str());
-        myLog(LOG_INFO, TAG "mCol = %d", mCol);
+        col = std::stoi(matchs[0].str().substr(wcslen(L"name=\"w\" value=\"")).c_str());
+        myLog(LOG_INFO, TAG "col = %d", col);
     }
     else
     {
@@ -942,15 +925,16 @@ bool SlitherLink::MainPage::ParseHtmlText(Platform::String^ content)
         return false;
     }
 
-    // get map
+    // get loop
+    mLoop->Clear();
     pattern.assign(L"<td align=\"center\" >\\d?<(?=/td>)");
     regex.assign(pattern);
     int count = 0;
     int len = wcslen(L"<td align=\"center\" >");
-    for (int i = 0; i < mRow; i++)
+    for (int i = 0; i < row; i++)
     {
         auto arr = ref new Vector<byte>();
-        for (int j = 0; j < mCol; j++)
+        for (int j = 0; j < col; j++)
         {
             if (std::regex_search(str, matchs, regex))
             {
@@ -969,8 +953,32 @@ bool SlitherLink::MainPage::ParseHtmlText(Platform::String^ content)
             }
             str = matchs.suffix();
         }
-        mMap->Append(arr);
+        mLoop->Append(arr);
     }
     myLog(LOG_INFO, TAG "ParseHtmlText done");
     return true;
+}
+
+
+LoopSize SlitherLink::MainPage::getLoopSize(int index)
+{
+    switch (index)
+    {
+    default:
+    case 0: return LoopSize::Normal_5x5;
+    case 1: return LoopSize::Normal_10x10;
+    case 2: return LoopSize::Normal_15x15;
+    case 3: return LoopSize::Normal_20x20;
+    case 4: return LoopSize::Hard_5x5;
+    case 5: return LoopSize::Hard_10x10;
+    case 6: return LoopSize::Hard_15x15;
+    case 7: return LoopSize::Hard_20x20;
+    case 8: return LoopSize::Normal_25x30;
+    case 9: return LoopSize::Hard_25x30;
+    case 10: return LoopSize::Normal_7x7;
+    case 11: return LoopSize::Hard_7x7;
+    case 13: return LoopSize::Special_Daily;
+    case 12: return LoopSize::Special_Weekly;
+    case 14: return LoopSize::Special_Monthly;
+    }
 }
