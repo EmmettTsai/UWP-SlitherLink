@@ -22,19 +22,44 @@
             <AppBarToggleButton
                 x:Name="SideToggleButton"
                 Width="120"
-                Icon="Shuffle"
-                Label="Enable Set Side"
+                Label="Enable Side Marker"
+                IsChecked="true"
                 Checked="SideToggleButton_Checked"
-                Unchecked="SideToggleButton_Unchecked"/>
+                Unchecked="SideToggleButton_Unchecked">
+                <AppBarToggleButton.Icon>
+                    <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xED64;"/>
+                </AppBarToggleButton.Icon>
+            </AppBarToggleButton>
             <AppBarToggleButton
                 x:Name="CellToggleButton"
                 Width="120"
-                Icon="Add"
-                Label="Enable Set Cell"
+                Label="Disable Cell Shader"
                 Checked="CellToggleButton_Checked"
-                Unchecked="CellToggleButton_Unchecked"/>
+                Unchecked="CellToggleButton_Unchecked">
+                <AppBarToggleButton.Icon>
+                    <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xF570;"/>
+                </AppBarToggleButton.Icon>
+            </AppBarToggleButton>
+            <AppBarButton
+                x:Name="LoadFromUrlButton"
+                Width="120"
+                Icon="Download"
+                Label="Load From Url"
+                Click="LoadFromUrlButton_Click"/>
+            <AppBarButton
+                x:Name="OpenFileButton"
+                Width="120"
+                Icon="OpenFile"
+                Label="Open File"
+                Click="OpenFileButton_Click"/>
         </CommandBar>
-        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto">
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" Background="SkyBlue">
+            <Grid>
+                <Canvas x:Name="RootCanvas" Margin="50,50,50,50" Visibility="Collapsed"/>
+                <TextBox x:Name="HtmlResult" Visibility="Collapsed" TextWrapping="Wrap" HorizontalAlignment="Stretch"/>
+            </Grid>
+        </ScrollViewer>
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" Visibility="Collapsed">
             <Grid x:Name="RootGrid">
                 <!--
                 <Grid.RowDefinitions>
@@ -76,21 +101,35 @@
                 -->
 
                 <!--
-                <Canvas Width="150" Height="150" Background="Green">
-                    <Border Canvas.ZIndex="1" Canvas.Left="0" Canvas.Top="0" Width="50" Height="50" Background="Black"/>
-                    <Border Canvas.ZIndex="1" Canvas.Left="100" Canvas.Top="0" Width="50" Height="50" Background="Black"/>
-                    <Border Canvas.ZIndex="1" Canvas.Left="0" Canvas.Top="100" Width="50" Height="50" Background="Black"/>
-                    <Border Canvas.ZIndex="1" Canvas.Left="100" Canvas.Top="100" Width="50" Height="50" Background="Black"/>
+                <Canvas Width="50" Height="50" Background="Green">
+                    <Border Canvas.ZIndex="1" Canvas.Left="0" Canvas.Top="0" Width="10" Height="10" Background="Black"/>
+                    <Border Canvas.ZIndex="1" Canvas.Left="40" Canvas.Top="0" Width="10" Height="10" Background="Black"/>
+                    <Border Canvas.ZIndex="1" Canvas.Left="0" Canvas.Top="40" Width="10" Height="10" Background="Black"/>
+                    <Border Canvas.ZIndex="1" Canvas.Left="40" Canvas.Top="40" Width="10" Height="10" Background="Black"/>
 
-                    <Border Canvas.ZIndex="0" Canvas.Left="25" Canvas.Top="25" Width="100" Height="100" Background="Yellow"/>
+                    <Border Canvas.ZIndex="0" Canvas.Left="5" Canvas.Top="5" Width="40" Height="40" Background="Yellow"/>
 
-                    <Border Canvas.ZIndex="1" Canvas.Left="50" Canvas.Top="0" Width="50" Height="50" Background="SkyBlue"/>
-                    <Border Canvas.ZIndex="1" Canvas.Left="0" Canvas.Top="50" Width="50" Height="50" Background="SkyBlue" Visibility="Collapsed"/>
+                    <Border Canvas.ZIndex="1" Canvas.Left="10" Canvas.Top="0" Width="30" Height="10">
+                        <Viewbox Width="30" Height="10" Stretch="Uniform">
+                            <Canvas Width="100" Height="100">
+                                <Path Width="100" Height="100" Stretch="Fill" StrokeThickness="15" StrokeLineJoin="Round" Stroke="Red" Data="F1 M 7.5,7.5L 92.5,92.5"/>
+                                <Path Width="100" Height="100" Stretch="Fill" StrokeThickness="15" StrokeLineJoin="Round" Stroke="Red" Data="F1 M 7.5,92.5L 92.5,7.5"/>
+                            </Canvas>
+                        </Viewbox>
+                    </Border>
+
+                    <Border Canvas.ZIndex="1" Canvas.Left="0" Canvas.Top="10" Width="10" Height="30">
+                        <Viewbox Width="10" Height="30" Stretch="Uniform">
+                            <Canvas Width="100" Height="100">
+                                <Path Width="100" Height="100" Stretch="Fill" StrokeThickness="15" StrokeLineJoin="Round" Stroke="Red" Data="F1 M 7.5,7.5L 92.5,92.5"/>
+                                <Path Width="100" Height="100" Stretch="Fill" StrokeThickness="15" StrokeLineJoin="Round" Stroke="Red" Data="F1 M 7.5,92.5L 92.5,7.5"/>
+                            </Canvas>
+                        </Viewbox>
+                    </Border>
                     <Border Canvas.ZIndex="1" Canvas.Left="100" Canvas.Top="50" Width="50" Height="50" Background="SkyBlue" Visibility="Collapsed"/>
                     <Border Canvas.ZIndex="1" Canvas.Left="50" Canvas.Top="100" Width="50" Height="50" Background="SkyBlue" Visibility="Collapsed"/>
                 </Canvas>
                 -->
-
             </Grid>
         </ScrollViewer>
     </Grid>

@@ -110,9 +110,20 @@ namespace SlitherLink
 		MainPage();
 
     private:
+        // https://msdn.microsoft.com/en-us/library/ts4c4dw6.aspx
+        Windows::Foundation::Collections::IVector<Windows::Foundation::Collections::IVector<byte>^>^ mMap;
         IndicatorState mIndicatorState;
         bool mEnableSetCell;
         bool mEnableSetSide;
+
+        Platform::String^ mUrl;
+        Windows::Web::Http::Filters::HttpBaseProtocolFilter^ mHttpFilter;
+        Windows::Web::Http::HttpClient^ mHttpClient;
+
+        int mRow;
+        int mCol;
+        Concurrency::task<void> ReadFile(Windows::Storage::StorageFile^ file);
+        void Init(int row, int col);
 
         void Grid_PointerPressed(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e);
         void Grid_PointerReleased(Platform::Object^ sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs^ e);
@@ -125,7 +136,6 @@ namespace SlitherLink
         void SetLine(Windows::UI::Xaml::Controls::Border^ item);
         void SetCross(Windows::UI::Xaml::Controls::Border^ item);
         void SetErase(Windows::UI::Xaml::Controls::Border^ item);
-
 
         void SetCell(Windows::UI::Xaml::Controls::Border^ item, IndicatorState state);
         void SetSide(Windows::UI::Xaml::Controls::Border^ item, IndicatorState state);
@@ -141,5 +151,10 @@ namespace SlitherLink
         void SideToggleButton_Unchecked(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void CellToggleButton_Checked(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void CellToggleButton_Unchecked(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+        void OpenFileButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+        Windows::UI::Xaml::Media::Geometry^ PathMarkupToGeometry(Platform::String^ pathMarkup);
+
+
+        void LoadFromUrlButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
     };
 }
