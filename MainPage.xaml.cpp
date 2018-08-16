@@ -310,14 +310,7 @@ void MainPage::Init(int row, int col)
             {
                 info->Type = GridItemType::Dot;
                 info->Degree = 0;
-#if BUG_FIXED
                 if (!isExtendedItem)
-#else
-                if (isExtendedItem)
-                {
-                }
-                else
-#endif
                 {
                     view->Width = dotSize;
                     view->Height = dotSize;
@@ -326,6 +319,11 @@ void MainPage::Init(int row, int col)
                     Canvas::SetLeft(view, (dotSize + cellSize) * (innerJ / 2));
                     Canvas::SetTop(view, (dotSize + cellSize) * (innerI / 2));
                 }
+#if !BUG_FIXED
+                else
+                {
+                }
+#endif
             }
             else if (i % 2 == 1 && j % 2 == 1)
             {
