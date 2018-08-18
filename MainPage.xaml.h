@@ -35,6 +35,7 @@ namespace SlitherLink
         IndicatorState mIndicatorState;
         bool mEnableSetCell;
         bool mEnableSetSide;
+        bool mRecursiveShader;
 
         Windows::UI::Xaml::Media::SolidColorBrush^ mTransparentColor;
         Windows::UI::Xaml::Media::SolidColorBrush^ mInsideMarkColor;
@@ -125,5 +126,9 @@ namespace SlitherLink
         void SaveFileButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void ResetScaleButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void ScaleSlider_ValueChanged(Platform::Object^ sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs^ e);
+        void RecursiveShaderCheckBox_Checked(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+        void RecursiveShaderCheckBox_Unchecked(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+        void SetCellStateRecursive(GridItemInfo^ info, GridItemState state);
+        void ClearRecursiveFlag();
     };
 }

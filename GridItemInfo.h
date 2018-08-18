@@ -11,6 +11,7 @@ namespace SlitherLink
         GridItemInfo()
         {
             m_isLocked = false;
+            m_recursiveFlag = false;
         }
 
         property GridItemType Type
@@ -134,6 +135,17 @@ namespace SlitherLink
                 m_state_slot_b = state;
             }
         }
+        property bool RecursiveFlag
+        {
+            bool get()
+            {
+                return m_recursiveFlag;
+            }
+            void set(bool recursiveFlag)
+            {
+                m_recursiveFlag = recursiveFlag;
+            }
+        }
     private:
         GridItemType m_type;
         GridItemState m_state;
@@ -144,6 +156,7 @@ namespace SlitherLink
         bool m_handled;
         bool m_isExtended;
         bool m_isLocked;
+        bool m_recursiveFlag;
 
         GridItemState m_state_slot_a;
         GridItemState m_state_slot_b;

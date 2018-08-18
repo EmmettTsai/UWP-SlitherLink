@@ -85,6 +85,7 @@ MainPage::MainPage()
 
     mEnableSetSide = true;
     mEnableSetCell = false;
+    mRecursiveShader = false;
     mStateSlot = StateSlot::Default;
     mParsedResult = nullptr;
 
@@ -486,14 +487,31 @@ void MainPage::Grid_PointerPressed(Platform::Object^ sender, Windows::UI::Xaml::
             return;
         }
         auto item = (Border^)sender;
+        auto info = (GridItemInfo^)(item->Tag);
         PointerPoint^ pointerPoint = e->GetCurrentPoint(item);
-        if (pointerPoint->Properties->IsLeftButtonPressed)
+        if (mRecursiveShader && info->Type == GridItemType::Cell)
         {
-            Update(sender, true);
+            bool erase = info->State != GridItemState::None;
+            if (pointerPoint->Properties->IsLeftButtonPressed)
+            {
+                SetCellStateRecursive(info, erase ? GridItemState::None : GridItemState::InSide);
+            }
+            else if (pointerPoint->Properties->IsRightButtonPressed)
+            {
+                SetCellStateRecursive(info, erase ? GridItemState::None : GridItemState::OutSide);
+            }
+            ClearRecursiveFlag();
         }
-        else if (pointerPoint->Properties->IsRightButtonPressed)
+        else
         {
-            Update(sender, false);
+            if (pointerPoint->Properties->IsLeftButtonPressed)
+            {
+                Update(sender, true);
+            }
+            else if (pointerPoint->Properties->IsRightButtonPressed)
+            {
+                Update(sender, false);
+            }
         }
     }
 }
@@ -1566,5 +1584,157 @@ void SlitherLink::MainPage::ScaleSlider_ValueChanged(Platform::Object^ sender, W
     {
         RootViewBox->Width = RootCanvas->Width * (ScaleSlider->Value / 100);
         RootViewBox->Height = RootCanvas->Height * (ScaleSlider->Value / 100);
+    }
+}
+
+
+void SlitherLink::MainPage::RecursiveShaderCheckBox_Checked(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+{
+    mRecursiveShader = true;
+}
+
+
+void SlitherLink::MainPage::RecursiveShaderCheckBox_Unchecked(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+{
+    mRecursiveShader = false;
+}
+
+
+void SlitherLink::MainPage::SetCellStateRecursive(GridItemInfo^ info, GridItemState state)
+{
+    if (info->RecursiveFlag)
+    {
+        return;
+    }
+    info->RecursiveFlag = true;
+    switch (state)
+    {
+    case GridItemState::InSide:
+        SetInside(info->View);
+        break;
+    case GridItemState::OutSide:
+        SetOutside(info->View);
+        break;
+    case GridItemState::None:
+        SetErase(info->View);
+        break;
+    }
+
+    GridItemInfo^ nextInfo;
+    int row = info->Row;
+    int col = info->Column;
+
+    // up
+    if (row - 2 > mRowStart)
+    {
+        auto side = GetExtendedLoopAt(row - 1, col);
+        nextInfo = GetExtendedLoopAt(row - 2, col);
+        if (side->State == GridItemState::Cross)
+        {
+            SetCellStateRecursive(nextInfo, state);
+        }
+        else if (side->State == GridItemState::Line)
+        {
+            switch (state)
+            {
+            case GridItemState::InSide:
+                SetCellStateRecursive(nextInfo, GridItemState::OutSide);
+                break;
+            case GridItemState::OutSide:
+                SetCellStateRecursive(nextInfo, GridItemState::InSide);
+                break;
+            case GridItemState::None:
+                SetCellStateRecursive(nextInfo, GridItemState::None);
+                break;
+            }
+        }
+    }
+    // right
+    if (col + 2 < mColEnd)
+    {
+        auto side = GetExtendedLoopAt(row, col + 1);
+        nextInfo = GetExtendedLoopAt(row, col + 2);
+        if (side->State == GridItemState::Cross)
+        {
+            SetCellStateRecursive(nextInfo, state);
+        }
+        else if (side->State == GridItemState::Line)
+        {
+            switch (state)
+            {
+            case GridItemState::InSide:
+                SetCellStateRecursive(nextInfo, GridItemState::OutSide);
+                break;
+            case GridItemState::OutSide:
+                SetCellStateRecursive(nextInfo, GridItemState::InSide);
+                break;
+            case GridItemState::None:
+                SetCellStateRecursive(nextInfo, GridItemState::None);
+                break;
+            }
+        }
+    }
+    // down
+    if (row + 2 < mRowEnd)
+    {
+        auto side = GetExtendedLoopAt(row + 1, col);
+        nextInfo = GetExtendedLoopAt(row + 2, col);
+        if (side->State == GridItemState::Cross)
+        {
+            SetCellStateRecursive(nextInfo, state);
+        }
+        else if (side->State == GridItemState::Line)
+        {
+            switch (state)
+            {
+            case GridItemState::InSide:
+                SetCellStateRecursive(nextInfo, GridItemState::OutSide);
+                break;
+            case GridItemState::OutSide:
+                SetCellStateRecursive(nextInfo, GridItemState::InSide);
+                break;
+            case GridItemState::None:
+                SetCellStateRecursive(nextInfo, GridItemState::None);
+                break;
+            }
+        }
+    }
+    // left
+    if (col - 2 > mColStart)
+    {
+        auto side = GetExtendedLoopAt(row, col - 1);
+        nextInfo = GetExtendedLoopAt(row, col - 2);
+        if (side->State == GridItemState::Cross)
+        {
+            SetCellStateRecursive(nextInfo, state);
+        }
+        else if (side->State == GridItemState::Line)
+        {
+            switch (state)
+            {
+            case GridItemState::InSide:
+                SetCellStateRecursive(nextInfo, GridItemState::OutSide);
+                break;
+            case GridItemState::OutSide:
+                SetCellStateRecursive(nextInfo, GridItemState::InSide);
+                break;
+            case GridItemState::None:
+                SetCellStateRecursive(nextInfo, GridItemState::None);
+                break;
+            }
+        }
+    }
+}
+
+
+void SlitherLink::MainPage::ClearRecursiveFlag()
+{
+    for (int i = mRowStart + 1; i < mRowEnd; i += 2)
+    {
+        for (int j = mColStart + 1; j < mColEnd; j += 2)
+        {
+            auto info = GetExtendedLoopAt(i, j);
+            info->RecursiveFlag = false;
+        }
     }
 }

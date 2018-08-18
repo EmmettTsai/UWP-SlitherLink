@@ -282,6 +282,12 @@
                         Click="ResetGameButton_Click"/>
                 </StackPanel>
                 <StackPanel x:Name="ShaderPanel"/>
+                <CheckBox
+                    x:Name="RecursiveShaderCheckBox"
+                    Margin="10,10,10,0"
+                    Content="Recursive Shader"
+                    Checked="RecursiveShaderCheckBox_Checked"
+                    Unchecked="RecursiveShaderCheckBox_Unchecked"/>
             </StackPanel>
             <ScrollViewer
                 Grid.Column="1"
