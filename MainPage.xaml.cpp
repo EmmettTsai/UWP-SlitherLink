@@ -70,6 +70,9 @@ http://tommyjswu-blog.logdown.com/posts/726230-cpp11-regex-expression
 https://msdn.microsoft.com/en-us/library/ts4c4dw6.aspx
 
 https://msdn.microsoft.com/en-us/library/windows/desktop/bb189018.aspx
+
+Create a multi-instance Universal Windows App
+https://docs.microsoft.com/zh-tw/windows/uwp/launch-resume/multi-instance-uwp
 */
 
 
