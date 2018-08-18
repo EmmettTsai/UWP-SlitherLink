@@ -86,6 +86,7 @@ MainPage::MainPage()
     mEnableSetSide = true;
     mEnableSetCell = false;
     mStateSlot = StateSlot::Default;
+    mParsedResult = nullptr;
 
     InitView();
 
@@ -275,6 +276,9 @@ void MainPage::Init(int row, int col)
 
     RootCanvas->Width = col * cellSize + (col + 1) * dotSize;
     RootCanvas->Height = row * cellSize + (row + 1) * dotSize;
+    RootViewBox->Width = RootCanvas->Width;
+    RootViewBox->Height = RootCanvas->Height;
+    ScaleSlider->Value = 100;
 
     Border^ background = ref new Border();
     background->Width = RootCanvas->Width - dotSize;
@@ -420,6 +424,46 @@ void MainPage::Init(int row, int col)
                 RootCanvas->Children->Append(view);
             }
             mExtendedLoop->Append(info);
+        }
+    }
+
+    if (mParsedResult != nullptr && mParsedResult->Length() >= mRowSize * mColSize)
+    {
+        std::wstring result(mParsedResult->Data());
+        for (int i = mRowStart; i <= mRowEnd; i++)
+        {
+            for (int j = mColStart; j <= mColEnd; j++)
+            {
+                auto info = GetExtendedLoopAt(i, j);
+                if (info->Type == GridItemType::Dot)
+                {
+                    continue;
+                }
+                int pos = (mColEnd - mColStart + 1) * (i - mRowStart) + (j - mColStart);
+                switch(result[pos])
+                {
+                case '1':
+                    if (info->Type == GridItemType::Cell)
+                    {
+                        SetInside(info->View, true);
+                    }
+                    else
+                    {
+                        SetLine(info->View, true);
+                    }
+                    break;
+                case '2':
+                    if (info->Type == GridItemType::Cell)
+                    {
+                        SetOutside(info->View, true);
+                    }
+                    else
+                    {
+                        SetCross(info->View, true);
+                    }
+                    break;
+                }
+            }
         }
     }
 }
@@ -842,6 +886,7 @@ task<bool> SlitherLink::MainPage::ReadTextFile(StorageFile^ file)
     mLoopRowSize = row;
     mLoopColSize = col;
     mLoop->Clear();
+    mParsedResult = nullptr;
     for (int i = 0; i < row; i++)
     {
         myLogW(LOG_DEBUG, LTAG L"------------- row = %d -------------", i);
@@ -858,6 +903,9 @@ task<bool> SlitherLink::MainPage::ReadTextFile(StorageFile^ file)
         myLogW(LOG_DEBUG, LTAG L"[%d] pos = %d", i, pos);
         ptr += pos;
     }
+    std::string parsedResult(ptr);
+    mParsedResult = ref new String(strToWstr(parsedResult).c_str());
+    myLogW(LOG_INFO, LTAG L"mParsedResult = %s", mParsedResult->Data());
 
     delete buf;
 
@@ -959,6 +1007,7 @@ void SlitherLink::MainPage::LoadFromUrlButton_Click(Platform::Object^ sender, Wi
                 }
 
                 this->Dispatcher->RunAsync(CoreDispatcherPriority::Normal, ref new DispatchedHandler([this]() {
+                    mParsedResult = nullptr;
                     Init(mLoopRowSize, mLoopColSize);
                     PuzzleInfo->Text = mPuzzleInfo;
                 }));
@@ -1502,4 +1551,20 @@ void SlitherLink::MainPage::SaveFileButton_Click(Platform::Object^ sender, Windo
             });
         }
     });
+}
+
+
+void SlitherLink::MainPage::ResetScaleButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+{
+    ScaleSlider->Value = 100;
+}
+
+
+void SlitherLink::MainPage::ScaleSlider_ValueChanged(Platform::Object^ sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs^ e)
+{
+    if (RootViewBox != nullptr && RootCanvas != nullptr)
+    {
+        RootViewBox->Width = RootCanvas->Width * (ScaleSlider->Value / 100);
+        RootViewBox->Height = RootCanvas->Height * (ScaleSlider->Value / 100);
+    }
 }

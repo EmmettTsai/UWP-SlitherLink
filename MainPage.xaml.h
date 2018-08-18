@@ -59,6 +59,7 @@ namespace SlitherLink
         int mColEnd;
         int mExtendedRowSize;
         int mExtendedColSize;
+        Platform::String^ mParsedResult;
 
         void InitView();
         void Init(int row, int col);
@@ -122,5 +123,7 @@ namespace SlitherLink
         void ClearSlotA_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void ClearSlotB_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void SaveFileButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+        void ResetScaleButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+        void ScaleSlider_ValueChanged(Platform::Object^ sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs^ e);
     };
 }

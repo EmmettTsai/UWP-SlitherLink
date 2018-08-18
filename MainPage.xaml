@@ -183,6 +183,22 @@
                         <x:String>Special Weekly Loop</x:String>
                         <x:String>Special Monthly Loop</x:String>
                     </ComboBox>
+                    <Slider
+                        x:Name="ScaleSlider"
+                        Header="Scale"
+                        Width="300"
+                        Margin="10,0,0,0"
+                        TickFrequency="10"
+                        TickPlacement="Outside"
+                        Minimum="25"
+                        Maximum="200"
+                        Value="100"
+                        ValueChanged="ScaleSlider_ValueChanged"/>
+                    <Button
+                        x:Name="ResetScaleButton"
+                        Content="Reset Scale"
+                        Click="ResetScaleButton_Click"
+                        Margin="40,0,0,0"/>
                 </StackPanel>
             </CommandBar.Content>
             <AppBarToggleButton
@@ -276,20 +292,14 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition/>
                     </Grid.RowDefinitions>
-                    <TextBox
+                    <TextBlock
                         x:Name="PuzzleInfo"
-                        IsReadOnly="True"
-                        BorderThickness="0"
-                        Background="Transparent"
                         FontSize="40"
                         HorizontalAlignment="Center"
-                        Margin="0,30,0,0">
-                        <TextBox.Resources>
-                            <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="Transparent"/>
-                            <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="Transparent"/>
-                        </TextBox.Resources>
-                    </TextBox>
-                    <Canvas x:Name="RootCanvas" Grid.Row="1" Margin="50,50,50,50"/>
+                        Margin="0,30,0,0"/>
+                    <Viewbox x:Name="RootViewBox" Grid.Row="1" Margin="50,50,50,50">
+                        <Canvas x:Name="RootCanvas"/>
+                    </Viewbox>
                 </Grid>
             </ScrollViewer>
         </Grid>
