@@ -21,6 +21,7 @@ using namespace Windows::Foundation;
 using namespace Windows::Foundation::Collections;
 using namespace Windows::Storage;
 using namespace Windows::Storage::Pickers;
+using namespace Windows::Storage::Provider;
 using namespace Windows::Storage::Streams;
 using namespace Windows::UI;
 using namespace Windows::UI::Core;
@@ -885,14 +886,15 @@ void SlitherLink::MainPage::OpenFileButton_Click(Platform::Object^ sender, Windo
     {
         if (file != nullptr)
         {
-            create_task(ReadTextFile(file)).then([this](bool result) {
+            create_task(ReadTextFile(file)).then([this, file](bool result) {
                 if (!result)
                 {
                     myLogW(LOG_WARN, LTAG L"OpenFile ReadTextFile fail");
                     return;
                 }
-                this->Dispatcher->RunAsync(CoreDispatcherPriority::Normal, ref new DispatchedHandler([this]() {
+                this->Dispatcher->RunAsync(CoreDispatcherPriority::Normal, ref new DispatchedHandler([this, file]() {
                     Init(mLoopRowSize, mLoopColSize);
+                    PuzzleInfo->Text = file->DisplayName;
                 }));
             });
         }
@@ -1435,4 +1437,66 @@ void SlitherLink::MainPage::ClearSlotB_Click(Platform::Object^ sender, Windows::
             info->StateSlotB = GridItemState::None;
         }
     }
+}
+
+
+void SlitherLink::MainPage::SaveFileButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+{
+    if (mLoop == nullptr)
+    {
+        return;
+    }
+    FileSavePicker^ picker = ref new FileSavePicker();
+    auto plainTextExtensions = ref new Platform::Collections::Vector<String^>();
+    plainTextExtensions->Append(".txt");
+    picker->FileTypeChoices->Insert("Plain Text", plainTextExtensions);
+    if (PuzzleInfo->Text->IsEmpty())
+    {
+        picker->SuggestedFileName = "New Puzzle";
+    }
+    else
+    {
+        picker->SuggestedFileName = PuzzleInfo->Text;
+    }
+
+    create_task(picker->PickSaveFileAsync()).then([this](StorageFile^ file)
+    {
+        if (file != nullptr)
+        {
+            String^ output = mLoopRowSize + " " + mLoopColSize + "\r\n";
+            for (int i = mRowStart + 1; i <= mRowEnd; i += 2)
+            {
+                for (int j = mColStart + 1; j <= mColEnd; j += 2)
+                {
+                    int degree = GetExtendedLoopAt(i, j)->Degree;
+                    if (degree < 0)
+                    {
+                        output += "_";
+                    }
+                    else
+                    {
+                        output += degree;
+                    }
+                }
+                output += "\r\n";
+            }
+            CachedFileManager::DeferUpdates(file);
+            create_task(FileIO::WriteTextAsync(file, output)).then([this, file]()
+            {
+                create_task(CachedFileManager::CompleteUpdatesAsync(file)).then([this, file](FileUpdateStatus status)
+                {
+#if false
+                    if (status == FileUpdateStatus::Complete)
+                    {
+                        //"File " + file->Name + " was saved.";
+                    }
+                    else
+                    {
+                        //"File " + file->Name + " couldn't be saved.";
+                    }
+#endif
+                });
+            });
+        }
+    });
 }

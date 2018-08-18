@@ -218,6 +218,12 @@
                 Icon="OpenFile"
                 Label="Open File"
                 Click="OpenFileButton_Click"/>
+            <AppBarButton
+                x:Name="SaveFileButton"
+                Width="120"
+                Icon="Save"
+                Label="Save File"
+                Click="SaveFileButton_Click"/>
         </CommandBar>
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
@@ -270,7 +276,19 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition/>
                     </Grid.RowDefinitions>
-                    <TextBlock x:Name="PuzzleInfo" FontSize="40" HorizontalAlignment="Center" Margin="0,30,0,0"/>
+                    <TextBox
+                        x:Name="PuzzleInfo"
+                        IsReadOnly="True"
+                        BorderThickness="0"
+                        Background="Transparent"
+                        FontSize="40"
+                        HorizontalAlignment="Center"
+                        Margin="0,30,0,0">
+                        <TextBox.Resources>
+                            <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="Transparent"/>
+                            <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="Transparent"/>
+                        </TextBox.Resources>
+                    </TextBox>
                     <Canvas x:Name="RootCanvas" Grid.Row="1" Margin="50,50,50,50"/>
                 </Grid>
             </ScrollViewer>

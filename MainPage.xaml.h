@@ -121,5 +121,6 @@ namespace SlitherLink
         void MergeSlotButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void ClearSlotA_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void ClearSlotB_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+        void SaveFileButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
     };
 }
