@@ -20,6 +20,7 @@
     <ClCompile Include="MainPage.xaml.cpp" />
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="log.cpp" />
+    <ClCompile Include="Solver.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -32,6 +33,8 @@
     <ClInclude Include="GridItemInfo.h" />
     <ClInclude Include="LoopSize.h" />
     <ClInclude Include="ShaderPair.h" />
+    <ClInclude Include="Solver.h" />
+    <ClInclude Include="SolverGridItemState.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\LockScreenLogo.scale-200.png">

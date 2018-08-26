@@ -2,6 +2,7 @@
 
 #include "GridItemType.h"
 #include "GridItemState.h"
+#include "SolverGridItemState.h"
 
 namespace SlitherLink
 {
@@ -10,8 +11,18 @@ namespace SlitherLink
     public:
         GridItemInfo()
         {
-            m_isLocked = false;
-            m_recursiveFlag = false;
+            ResetState();
+        }
+
+        void ResetState()
+        {
+            IsLocked = false;
+            RecursiveFlag = false;
+            Handled = false;
+            State = GridItemState::None;
+            StateSlotA = GridItemState::None;
+            StateSlotB = GridItemState::None;
+            SolverState = SolverGridItemState::None;
         }
 
         property GridItemType Type
@@ -146,6 +157,17 @@ namespace SlitherLink
                 m_recursiveFlag = recursiveFlag;
             }
         }
+        property SolverGridItemState SolverState
+        {
+            SolverGridItemState get()
+            {
+                return m_solverState;
+            }
+            void set(SolverGridItemState solverState)
+            {
+                m_solverState = solverState;
+            }
+        }
     private:
         GridItemType m_type;
         GridItemState m_state;
@@ -160,6 +182,8 @@ namespace SlitherLink
 
         GridItemState m_state_slot_a;
         GridItemState m_state_slot_b;
+
+        SolverGridItemState m_solverState;
     };
 
 }

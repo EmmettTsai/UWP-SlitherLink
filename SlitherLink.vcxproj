@@ -151,6 +151,8 @@
       <DependentUpon>MainPage.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="ShaderPair.h" />
+    <ClInclude Include="Solver.h" />
+    <ClInclude Include="SolverGridItemState.h" />
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml">
@@ -194,6 +196,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="Solver.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

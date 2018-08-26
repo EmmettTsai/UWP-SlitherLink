@@ -280,6 +280,12 @@
                         HorizontalAlignment="Stretch"
                         Margin="0,10,0,0"
                         Click="ResetGameButton_Click"/>
+                    <Button
+                        x:Name="SolveButton"
+                        Content="Solve"
+                        HorizontalAlignment="Stretch"
+                        Margin="0,10,0,0"
+                        Click="SolveButton_Click"/>
                 </StackPanel>
                 <StackPanel x:Name="ShaderPanel"/>
                 <CheckBox

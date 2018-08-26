@@ -31,6 +31,7 @@ namespace SlitherLink
         StateSlot mStateSlot;
         Windows::Foundation::Collections::IVector<byte>^ mLoop;
         Windows::Foundation::Collections::IVector<GridItemInfo^>^ mExtendedLoop;
+        Platform::String^ mLoopData;
         Windows::Foundation::Collections::IVector<Platform::String^>^ mRule;
         IndicatorState mIndicatorState;
         bool mEnableSetCell;
@@ -60,7 +61,7 @@ namespace SlitherLink
         int mColEnd;
         int mExtendedRowSize;
         int mExtendedColSize;
-        Platform::String^ mParsedResult;
+        Platform::String^ mSolvedResult;
 
         void InitView();
         void Init(int row, int col);
@@ -130,5 +131,7 @@ namespace SlitherLink
         void RecursiveShaderCheckBox_Unchecked(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void SetCellStateRecursive(GridItemInfo^ info, GridItemState state);
         void ClearRecursiveFlag();
+        void SolveButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+        void ApplySolvedResult();
     };
 }

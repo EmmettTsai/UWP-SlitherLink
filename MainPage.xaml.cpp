@@ -10,6 +10,7 @@
 #include <locale.h>
 #include "MainPage.xaml.h"
 #include "ShaderPair.h"
+#include "Solver.h"
 
 using namespace SlitherLink;
 
@@ -87,7 +88,7 @@ MainPage::MainPage()
     mEnableSetCell = false;
     mRecursiveShader = false;
     mStateSlot = StateSlot::Default;
-    mParsedResult = nullptr;
+    mSolvedResult = nullptr;
 
     InitView();
 
@@ -425,46 +426,6 @@ void MainPage::Init(int row, int col)
                 RootCanvas->Children->Append(view);
             }
             mExtendedLoop->Append(info);
-        }
-    }
-
-    if (mParsedResult != nullptr && mParsedResult->Length() >= mRowSize * mColSize)
-    {
-        std::wstring result(mParsedResult->Data());
-        for (int i = mRowStart; i <= mRowEnd; i++)
-        {
-            for (int j = mColStart; j <= mColEnd; j++)
-            {
-                auto info = GetExtendedLoopAt(i, j);
-                if (info->Type == GridItemType::Dot)
-                {
-                    continue;
-                }
-                int pos = (mColEnd - mColStart + 1) * (i - mRowStart) + (j - mColStart);
-                switch(result[pos])
-                {
-                case '1':
-                    if (info->Type == GridItemType::Cell)
-                    {
-                        SetInside(info->View, true);
-                    }
-                    else
-                    {
-                        SetLine(info->View, true);
-                    }
-                    break;
-                case '2':
-                    if (info->Type == GridItemType::Cell)
-                    {
-                        SetOutside(info->View, true);
-                    }
-                    else
-                    {
-                        SetCross(info->View, true);
-                    }
-                    break;
-                }
-            }
         }
     }
 }
@@ -901,10 +862,10 @@ task<bool> SlitherLink::MainPage::ReadTextFile(StorageFile^ file)
     }
     ptr += pos;
     myLogW(LOG_INFO, LTAG L"row = %d, col = %d, pos = %d", row, col, pos);
+    mLoopData = L"";
     mLoopRowSize = row;
     mLoopColSize = col;
     mLoop->Clear();
-    mParsedResult = nullptr;
     for (int i = 0; i < row; i++)
     {
         myLogW(LOG_DEBUG, LTAG L"------------- row = %d -------------", i);
@@ -916,14 +877,28 @@ task<bool> SlitherLink::MainPage::ReadTextFile(StorageFile^ file)
             ch = *ptr++;
             myLogW(LOG_DEBUG, LTAG L"[%d] ch = %c", j, ch);
             mLoop->Append(ch);
+            switch (ch)
+            {
+            case '0':
+                mLoopData += L"0";
+                break;
+            case '1':
+                mLoopData += L"1";
+                break;
+            case '2':
+                mLoopData += L"2";
+                break;
+            case '3':
+                mLoopData += L"3";
+                break;
+            default:
+                mLoopData += L"_";
+            }
         }
         sscanf_s(ptr, "%*[\r\n]%n", &pos);
         myLogW(LOG_DEBUG, LTAG L"[%d] pos = %d", i, pos);
         ptr += pos;
     }
-    std::string parsedResult(ptr);
-    mParsedResult = ref new String(strToWstr(parsedResult).c_str());
-    myLogW(LOG_INFO, LTAG L"mParsedResult = %s", mParsedResult->Data());
 
     delete buf;
 
@@ -1025,7 +1000,6 @@ void SlitherLink::MainPage::LoadFromUrlButton_Click(Platform::Object^ sender, Wi
                 }
 
                 this->Dispatcher->RunAsync(CoreDispatcherPriority::Normal, ref new DispatchedHandler([this]() {
-                    mParsedResult = nullptr;
                     Init(mLoopRowSize, mLoopColSize);
                     PuzzleInfo->Text = mPuzzleInfo;
                 }));
@@ -1104,6 +1078,7 @@ bool SlitherLink::MainPage::ParseHtmlText(Platform::String^ content)
     }
 
     // get loop
+    mLoopData = L"";
     mLoopRowSize = row;
     mLoopColSize = col;
     mLoop->Clear();
@@ -1124,6 +1099,23 @@ bool SlitherLink::MainPage::ParseHtmlText(Platform::String^ content)
                     ch = ' ';
                 }
                 mLoop->Append(ch);
+                switch (ch)
+                {
+                case '0':
+                    mLoopData += L"0";
+                    break;
+                case '1':
+                    mLoopData += L"1";
+                    break;
+                case '2':
+                    mLoopData += L"2";
+                    break;
+                case '3':
+                    mLoopData += L"3";
+                    break;
+                default:
+                    mLoopData += L"_";
+                }
             }
             else
             {
@@ -1382,9 +1374,8 @@ void SlitherLink::MainPage::ResetGameButton_Click(Platform::Object^ sender, Wind
                 info->View->Child = nullptr;
                 break;
             }
-            info->State = GridItemState::None;
+            info->ResetState();
             info->View->Background = mTransparentColor;
-            info->IsLocked = false;
         }
     }
 }
@@ -1737,4 +1728,68 @@ void SlitherLink::MainPage::ClearRecursiveFlag()
             info->RecursiveFlag = false;
         }
     }
+}
+
+
+void SlitherLink::MainPage::SolveButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+{
+    if (mLoopData == nullptr || mLoopData->Length() != mLoopRowSize * mLoopColSize)
+    {
+        myLogW(LOG_DEBUG, LTAG L"mLoopData is null = %d", (mLoopData == nullptr));
+        if (mLoopData != nullptr)
+        {
+            myLogW(LOG_DEBUG, LTAG L"mLoopData->Length = %u, mLoopData = %s", mLoopData->Length(), mLoopData->Data());
+        }
+        myLogW(LOG_DEBUG, LTAG L"mLoopRowSize * mLoopColSize = %d", mLoopRowSize * mLoopColSize);
+        return;
+    }
+    Solver^ solver = ref new Solver(mLoopRowSize, mLoopColSize, mLoopData);
+    mSolvedResult = solver->Solve();
+    myLogW(LOG_DEBUG, LTAG L"mSolvedResult: %s", mSolvedResult->Data());
+    ApplySolvedResult();
+}
+
+
+void SlitherLink::MainPage::ApplySolvedResult()
+{
+    if (mSolvedResult != nullptr && mSolvedResult->Length() == mRowSize * mColSize)
+    {
+        std::wstring result(mSolvedResult->Data());
+        for (int i = mRowStart; i <= mRowEnd; i++)
+        {
+            for (int j = mColStart; j <= mColEnd; j++)
+            {
+                auto info = GetExtendedLoopAt(i, j);
+                if (info->Type == GridItemType::Dot)
+                {
+                    continue;
+                }
+                int pos = (mColEnd - mColStart + 1) * (i - mRowStart) + (j - mColStart);
+                switch (result[pos])
+                {
+                case '1':
+                    if (info->Type == GridItemType::Cell)
+                    {
+                        SetInside(info->View, true);
+                    }
+                    else
+                    {
+                        SetLine(info->View, true);
+                    }
+                    break;
+                case '2':
+                    if (info->Type == GridItemType::Cell)
+                    {
+                        SetOutside(info->View, true);
+                    }
+                    else
+                    {
+                        SetCross(info->View, true);
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
 }
