@@ -71,6 +71,7 @@ namespace SlitherLink
         Windows::Foundation::Collections::IVector<GridItemInfo^>^ mGridUnknown;
 
         Windows::Foundation::Collections::IVector<GridItemInfo^>^ mQueue;
+        Windows::Foundation::Collections::IVector<GridItemInfo^>^ mDotSet;
 
         inline int Solver::GetDataAt(int i, int j);
         inline GridItemInfo^ GetExtendedLoopAt(int i, int j);
@@ -112,5 +113,6 @@ namespace SlitherLink
         void RuleCornerHaveDifferentState(GridItemInfo^ info, Direction direction);
         void RuleSetCornerSameState(GridItemInfo^ info, Direction direction, GridItemState state, bool recursive = true);
         void RuleSetCornerDifferentState(GridItemInfo^ info, Direction direction, bool recursive = true);
+        void RuleCycleTest();
     };
 }

@@ -27,6 +27,7 @@ Solver::Solver(int row, int col, String^ data)
     mGridThree = ref new Vector<GridItemInfo^>();
     mGridUnknown = ref new Vector<GridItemInfo^>();
     mQueue = ref new Vector<GridItemInfo^>();
+    mDotSet = ref new Vector<GridItemInfo^>();
     myLogW(LOG_DEBUG, LTAG L"[%d][%s] mData->Length = %d, mData = %s", __LINE__, __funcw__, mData->Length(), mData->Data());
     InitExtendedLoop();
 }
@@ -262,7 +263,7 @@ String^ Solver::Solve()
     while (true)
     {
         mUpdated = false;
-        while (mQueue->Size > 0)
+        while (true)
         {
             auto info = mQueue->GetAt(0);
             mQueue->RemoveAt(0);
@@ -271,6 +272,15 @@ String^ Solver::Solve()
                 info->SolverState = SolverGridItemState::Checked;
             }
             RuleCheckSelf(info);
+            if (mQueue->Size > 0)
+            {
+                continue;
+            }
+            RuleCycleTest();
+            if (mQueue->Size == 0)
+            {
+                break;
+            }
         }
         if (!mUpdated)
         {
@@ -278,19 +288,18 @@ String^ Solver::Solve()
         }
         for (auto set : { mGridThree, mGridTwo, mGridOne, mGridUnknown })
         {
-            for (unsigned int i = 0; i < set->Size;)
+            unsigned int i = 0;
+            while (i < set->Size)
             {
                 auto info = set->GetAt(i);
                 if (info->SolverState == SolverGridItemState::Completed)
                 {
                     set->RemoveAt(i);
+                    continue;
                 }
-                else
-                {
-                    mQueue->Append(info);
-                    info->SolverState = SolverGridItemState::Queued;
-                    i++;
-                }
+                mQueue->Append(info);
+                info->SolverState = SolverGridItemState::Queued;
+                i++;
             }
         }
     }
@@ -357,6 +366,27 @@ bool Solver::SetLine(GridItemInfo^ info)
     else if (info->State == GridItemState::None)
     {
         info->State = GridItemState::Line;
+        switch (info->Type)
+        {
+        case GridItemType::HorizontailLine:
+            for (auto vertex : { GetLeft(info), GetRight(info) })
+            {
+                if (++vertex->Degree == 1)
+                {
+                    mDotSet->Append(vertex);
+                }
+            }
+            break;
+        case GridItemType::VerticalLine:
+            for (auto vertex : { GetTop(info), GetBottom(info) })
+            {
+                if (++vertex->Degree == 1)
+                {
+                    mDotSet->Append(vertex);
+                }
+            }
+            break;
+        }
         UpdateQueue(info);
     }
     return true;
@@ -594,7 +624,7 @@ void Solver::RuleCheckCell(GridItemInfo^ info)
             }
         }
     }
-#if false
+
     switch (info->Degree)
     {
     case 1:
@@ -609,7 +639,6 @@ void Solver::RuleCheckCell(GridItemInfo^ info)
     default:
         RuleCheckUnknown(info);
     }
-#endif
 }
 
 
@@ -621,13 +650,64 @@ void Solver::RuleCheckOne(GridItemInfo^ info)
 
 void Solver::RuleCheckTwo(GridItemInfo^ info)
 {
+    // TODO Special Daily Loop 26-07-2018
+    for (auto direction : { Direction::RightBottom, Direction::LeftBottom })
+    {
+        auto reverseDirection = GetReverseDirection(direction);
+        auto head = GetExtendedLoopAt(info, reverseDirection, 2);
 
+        auto sideA = GetExtendedLoopAt(head, RotateDirection(direction, RotateDegree::Counterclockwise45));
+        auto sideB = GetExtendedLoopAt(head, RotateDirection(direction, RotateDegree::Clockwise45));
+        auto sideC = GetExtendedLoopAt(info, RotateDirection(reverseDirection, RotateDegree::Counterclockwise45));
+        auto sideD = GetExtendedLoopAt(info, RotateDirection(reverseDirection, RotateDegree::Clockwise45));
+        bool patternMatch = false;
+        if (sideA->State == GridItemState::Line || sideB->State == GridItemState::Line
+            || sideC->State == GridItemState::Cross || sideD->State == GridItemState::Cross)
+        {
+            auto tail = info;
+            auto next = GetExtendedLoopAt(tail, direction, 2);
+            while (true)
+            {
+                sideA = GetExtendedLoopAt(tail, RotateDirection(direction, RotateDegree::Counterclockwise45));
+                sideB = GetExtendedLoopAt(tail, RotateDirection(direction, RotateDegree::Clockwise45));
+                sideC = GetExtendedLoopAt(next, RotateDirection(reverseDirection, RotateDegree::Counterclockwise45));
+                sideD = GetExtendedLoopAt(next, RotateDirection(reverseDirection, RotateDegree::Clockwise45));
+                if (sideA->State == GridItemState::Cross || sideB->State == GridItemState::Cross
+                    || sideC->State == GridItemState::Line || sideD->State == GridItemState::Line)
+                {
+                    patternMatch = true;
+                    break;
+                }
+                tail = next;
+                if (tail->Degree != 2)
+                {
+                    break;
+                }
+                next = GetExtendedLoopAt(next, direction, 2);
+            }
+        }
+        if (patternMatch)
+        {
+            RuleSetCornerDifferentState(head, direction);
+        }
+    }
 }
 
 
 void Solver::RuleCheckThree(GridItemInfo^ info)
 {
-
+    for (auto direction : { Direction::LeftTop, Direction::RightTop, Direction::RightBottom, Direction::LeftBottom })
+    {
+        auto next = GetExtendedLoopAt(info, direction, 2);
+        auto reverseDirection = GetReverseDirection(direction);
+        auto sideA = GetExtendedLoopAt(next, RotateDirection(reverseDirection, RotateDegree::Counterclockwise45));
+        auto sideB = GetExtendedLoopAt(next, RotateDirection(reverseDirection, RotateDegree::Clockwise45));
+        if (sideA->State == GridItemState::Line || sideB->State == GridItemState::Line)
+        {
+            RuleSetCornerSameState(info, reverseDirection, GridItemState::Line);
+            RuleSetCornerDifferentState(info, direction);
+        }
+    }
 }
 
 
@@ -666,6 +746,7 @@ void Solver::RuleCornerHaveSameState(GridItemInfo^ info, Direction direction, Gr
         if (next->Degree == 1)
         {
             RuleSetCornerSameState(next, GetReverseDirection(direction), GridItemState::Cross, false);
+            RuleSetCornerDifferentState(next, direction);
         }
         else if (next->Degree == 2)
         {
@@ -676,6 +757,18 @@ void Solver::RuleCornerHaveSameState(GridItemInfo^ info, Direction direction, Gr
         {
             RuleSetCornerSameState(next, GetReverseDirection(direction), GridItemState::Line, false);
             RuleSetCornerDifferentState(next, direction);
+        }
+        else
+        {
+            RuleSetCornerSameState(next, GetReverseDirection(direction), GridItemState::None, false);
+        }
+    }
+    else if(state == GridItemState::None)
+    {
+        if (next->Degree == 2)
+        {
+            RuleSetCornerSameState(next, GetReverseDirection(direction), GridItemState::None, false);
+            RuleSetCornerSameState(next, direction, GridItemState::None);
         }
         else
         {
@@ -769,4 +862,80 @@ GridItemState Solver::GetReverseState(GridItemState state)
 Direction Solver::GetReverseDirection(Direction direction)
 {
     return RotateDirection(direction, RotateDegree::Clockwise180);
+}
+
+
+void Solver::RuleCycleTest()
+{
+    auto handledDotSet = ref new Vector<GridItemInfo^>();
+    unsigned int i = 0;
+    while (i < mDotSet->Size)
+    {
+        auto head = mDotSet->GetAt(i);
+        if (head->Degree == 2)
+        {
+            for (auto side :
+                {
+                    GetLeft(head),
+                    GetTop(head),
+                    GetRight(head),
+                    GetBottom(head)
+                })
+            {
+                if (side->State == GridItemState::None)
+                {
+                    SetCross(side);
+                }
+            }
+            mDotSet->RemoveAt(i);
+            continue;
+        }
+        if (!head->Handled)
+        {
+            auto tail = head;
+            do
+            {
+                for (auto direction :
+                    {
+                        Direction::Left,
+                        Direction::Top,
+                        Direction::Right,
+                        Direction::Bottom
+                    })
+                {
+                    if (GetExtendedLoopAt(tail, direction)->State == GridItemState::Line)
+                    {
+                        auto next = GetExtendedLoopAt(tail, direction, 2);
+                        if (!next->Handled)
+                        {
+                            tail->Handled = true;
+                            handledDotSet->Append(tail);
+                            tail = next;
+                            break;
+                        }
+                    }
+                }
+            } while (tail->Degree == 2);
+            for (auto direction :
+                {
+                    Direction::Left,
+                    Direction::Top,
+                    Direction::Right,
+                    Direction::Bottom
+                })
+            {
+                if (tail == GetExtendedLoopAt(head, direction, 2))
+                {
+                    SetCross(GetExtendedLoopAt(head, direction));
+                    break;
+                }
+            }
+            tail->Handled;
+        }
+        i++;
+    }
+    for (auto dot : handledDotSet)
+    {
+        dot->Handled = false;
+    }
 }
