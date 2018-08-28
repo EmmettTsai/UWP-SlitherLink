@@ -28,6 +28,10 @@ Solver::Solver(int row, int col, String^ data)
     mGridUnknown = ref new Vector<GridItemInfo^>();
     mQueue = ref new Vector<GridItemInfo^>();
     mDotSet = ref new Vector<GridItemInfo^>();
+    mLeftBorderCellSet = ref new Vector<GridItemInfo^>();
+    mTopBorderCellSet = ref new Vector<GridItemInfo^>();
+    mRightBorderCellSet = ref new Vector<GridItemInfo^>();
+    mBottomBorderCellSet = ref new Vector<GridItemInfo^>();
     myLogW(LOG_DEBUG, LTAG L"[%d][%s] mData->Length = %d, mData = %s", __LINE__, __funcw__, mData->Length(), mData->Data());
     InitExtendedLoop();
 }
@@ -188,6 +192,22 @@ void Solver::InitExtendedLoop()
                     default:
                         mGridUnknown->Append(info);
                     }
+                    if (j == mColStart + 1)
+                    {
+                        mLeftBorderCellSet->Append(info);
+                    }
+                    else if (i == mRowStart + 1)
+                    {
+                        mTopBorderCellSet->Append(info);
+                    }
+                    else if (j == mColEnd - 1)
+                    {
+                        mRightBorderCellSet->Append(info);
+                    }
+                    else if (i == mRowEnd - 1)
+                    {
+                        mBottomBorderCellSet->Append(info);
+                    }
                 }
             }
             else if (i % 2 == 0)
@@ -278,6 +298,11 @@ String^ Solver::Solve()
             }
             RuleCycleTest();
             RuleCycleTestForThree();
+            if (mQueue->Size > 0)
+            {
+                continue;
+            }
+            RuleColorTest();
             if (mQueue->Size == 0)
             {
                 break;
@@ -1043,5 +1068,231 @@ void Solver::RuleCycleTestForThree()
             dot->Handled = false;
         }
         i++;
+    }
+}
+
+
+void Solver::RuleColorTest()
+{
+    for (auto cell : mLeftBorderCellSet)
+    {
+        switch (GetLeft(cell)->State)
+        {
+        case GridItemState::Line:
+            SetCellStateRecursive(cell, GridItemState::InSide);
+            break;
+        case GridItemState::Cross:
+            SetCellStateRecursive(cell, GridItemState::OutSide);
+            break;
+        }
+    }
+    for (auto cell : mTopBorderCellSet)
+    {
+        switch (GetTop(cell)->State)
+        {
+        case GridItemState::Line:
+            SetCellStateRecursive(cell, GridItemState::InSide);
+            break;
+        case GridItemState::Cross:
+            SetCellStateRecursive(cell, GridItemState::OutSide);
+            break;
+        }
+    }
+    for (auto cell : mRightBorderCellSet)
+    {
+        switch (GetRight(cell)->State)
+        {
+        case GridItemState::Line:
+            SetCellStateRecursive(cell, GridItemState::InSide);
+            break;
+        case GridItemState::Cross:
+            SetCellStateRecursive(cell, GridItemState::OutSide);
+            break;
+        }
+    }
+    for (auto cell : mBottomBorderCellSet)
+    {
+        switch (GetBottom(cell)->State)
+        {
+        case GridItemState::Line:
+            SetCellStateRecursive(cell, GridItemState::InSide);
+            break;
+        case GridItemState::Cross:
+            SetCellStateRecursive(cell, GridItemState::OutSide);
+            break;
+        }
+    }
+    ClearRecursiveFlag();
+
+    for (int i = mRowStart + 1; i < mRowEnd; i += 2)
+    {
+        for (int j = mColStart + 1; j < mColEnd; j += 2)
+        {
+            auto cell = GetExtendedLoopAt(i, j);
+            for (auto direction : { Direction::Left, Direction::Top, Direction::Right, Direction::Bottom })
+            {
+                if (direction == Direction::Right && j != mColEnd - 1)
+                {
+                    continue;
+                }
+                if (direction == Direction::Bottom && i != mRowEnd - 1)
+                {
+                    continue;
+                }
+
+                auto side = GetExtendedLoopAt(cell, direction);
+                auto next = GetExtendedLoopAt(cell, direction, 2);
+                if (side->State == GridItemState::None
+                    && cell->State != GridItemState::None
+                    && next->State != GridItemState::None)
+                {
+                    if (cell->State == next->State)
+                    {
+                        SetCross(side);
+                    }
+                    else
+                    {
+                        SetLine(side);
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+void Solver::ClearRecursiveFlag()
+{
+    for (int i = mRowStart + 1; i < mRowEnd; i += 2)
+    {
+        for (int j = mColStart + 1; j < mColEnd; j += 2)
+        {
+            auto info = GetExtendedLoopAt(i, j);
+            info->RecursiveFlag = false;
+        }
+    }
+}
+
+
+void Solver::SetCellStateRecursive(GridItemInfo^ info, GridItemState state)
+{
+    if (info->RecursiveFlag)
+    {
+        return;
+    }
+    info->RecursiveFlag = true;
+    switch (state)
+    {
+    case GridItemState::InSide:
+        SetInside(info);
+        break;
+    case GridItemState::OutSide:
+        SetOutside(info);
+        break;
+    }
+
+    GridItemInfo^ nextInfo;
+    int row = info->Row;
+    int col = info->Column;
+
+    // up
+    if (row - 2 > mRowStart)
+    {
+        auto side = GetExtendedLoopAt(row - 1, col);
+        nextInfo = GetExtendedLoopAt(row - 2, col);
+        if (side->State == GridItemState::Cross)
+        {
+            SetCellStateRecursive(nextInfo, state);
+        }
+        else if (side->State == GridItemState::Line)
+        {
+            switch (state)
+            {
+            case GridItemState::InSide:
+                SetCellStateRecursive(nextInfo, GridItemState::OutSide);
+                break;
+            case GridItemState::OutSide:
+                SetCellStateRecursive(nextInfo, GridItemState::InSide);
+                break;
+            case GridItemState::None:
+                SetCellStateRecursive(nextInfo, GridItemState::None);
+                break;
+            }
+        }
+    }
+    // right
+    if (col + 2 < mColEnd)
+    {
+        auto side = GetExtendedLoopAt(row, col + 1);
+        nextInfo = GetExtendedLoopAt(row, col + 2);
+        if (side->State == GridItemState::Cross)
+        {
+            SetCellStateRecursive(nextInfo, state);
+        }
+        else if (side->State == GridItemState::Line)
+        {
+            switch (state)
+            {
+            case GridItemState::InSide:
+                SetCellStateRecursive(nextInfo, GridItemState::OutSide);
+                break;
+            case GridItemState::OutSide:
+                SetCellStateRecursive(nextInfo, GridItemState::InSide);
+                break;
+            case GridItemState::None:
+                SetCellStateRecursive(nextInfo, GridItemState::None);
+                break;
+            }
+        }
+    }
+    // down
+    if (row + 2 < mRowEnd)
+    {
+        auto side = GetExtendedLoopAt(row + 1, col);
+        nextInfo = GetExtendedLoopAt(row + 2, col);
+        if (side->State == GridItemState::Cross)
+        {
+            SetCellStateRecursive(nextInfo, state);
+        }
+        else if (side->State == GridItemState::Line)
+        {
+            switch (state)
+            {
+            case GridItemState::InSide:
+                SetCellStateRecursive(nextInfo, GridItemState::OutSide);
+                break;
+            case GridItemState::OutSide:
+                SetCellStateRecursive(nextInfo, GridItemState::InSide);
+                break;
+            case GridItemState::None:
+                SetCellStateRecursive(nextInfo, GridItemState::None);
+                break;
+            }
+        }
+    }
+    // left
+    if (col - 2 > mColStart)
+    {
+        auto side = GetExtendedLoopAt(row, col - 1);
+        nextInfo = GetExtendedLoopAt(row, col - 2);
+        if (side->State == GridItemState::Cross)
+        {
+            SetCellStateRecursive(nextInfo, state);
+        }
+        else if (side->State == GridItemState::Line)
+        {
+            switch (state)
+            {
+            case GridItemState::InSide:
+                SetCellStateRecursive(nextInfo, GridItemState::OutSide);
+                break;
+            case GridItemState::OutSide:
+                SetCellStateRecursive(nextInfo, GridItemState::InSide);
+                break;
+            case GridItemState::None:
+                SetCellStateRecursive(nextInfo, GridItemState::None);
+                break;
+            }
+        }
     }
 }
