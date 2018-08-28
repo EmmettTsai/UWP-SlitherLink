@@ -650,8 +650,7 @@ void Solver::RuleCheckOne(GridItemInfo^ info)
 
 void Solver::RuleCheckTwo(GridItemInfo^ info)
 {
-    // TODO Special Daily Loop 26-07-2018
-    for (auto direction : { Direction::RightBottom, Direction::LeftBottom })
+    for (auto direction : { Direction::LeftTop, Direction::RightTop, Direction::RightBottom, Direction::LeftBottom })
     {
         auto reverseDirection = GetReverseDirection(direction);
         auto head = GetExtendedLoopAt(info, reverseDirection, 2);
@@ -668,18 +667,26 @@ void Solver::RuleCheckTwo(GridItemInfo^ info)
             auto next = GetExtendedLoopAt(tail, direction, 2);
             while (true)
             {
-                sideA = GetExtendedLoopAt(tail, RotateDirection(direction, RotateDegree::Counterclockwise45));
-                sideB = GetExtendedLoopAt(tail, RotateDirection(direction, RotateDegree::Clockwise45));
-                sideC = GetExtendedLoopAt(next, RotateDirection(reverseDirection, RotateDegree::Counterclockwise45));
-                sideD = GetExtendedLoopAt(next, RotateDirection(reverseDirection, RotateDegree::Clockwise45));
-                if (sideA->State == GridItemState::Cross || sideB->State == GridItemState::Cross
-                    || sideC->State == GridItemState::Line || sideD->State == GridItemState::Line)
+                if (direction == Direction::RightBottom || direction == Direction::LeftBottom)
+                {
+                    sideA = GetExtendedLoopAt(tail, RotateDirection(direction, RotateDegree::Counterclockwise45));
+                    sideB = GetExtendedLoopAt(tail, RotateDirection(direction, RotateDegree::Clockwise45));
+                    sideC = GetExtendedLoopAt(next, RotateDirection(reverseDirection, RotateDegree::Counterclockwise45));
+                    sideD = GetExtendedLoopAt(next, RotateDirection(reverseDirection, RotateDegree::Clockwise45));
+                    if (sideA->State == GridItemState::Cross || sideB->State == GridItemState::Cross
+                        || sideC->State == GridItemState::Line || sideD->State == GridItemState::Line)
+                    {
+                        patternMatch = true;
+                        break;
+                    }
+                }
+                tail = next;
+                if (tail->Degree == 3)
                 {
                     patternMatch = true;
                     break;
                 }
-                tail = next;
-                if (tail->Degree != 2)
+                else if (tail->Degree != 2)
                 {
                     break;
                 }
@@ -722,6 +729,7 @@ void Solver::RuleCornerHaveSameState(GridItemInfo^ info, Direction direction, Gr
     auto next = GetExtendedLoopAt(info, direction, 2);
     if (next->IsExtended)
     {
+        RuleSetCornerSameState(next, GetReverseDirection(direction), GridItemState::None, false);
         return;
     }
 
@@ -735,7 +743,11 @@ void Solver::RuleCornerHaveSameState(GridItemInfo^ info, Direction direction, Gr
     {
         RuleSetCornerSameState(next, GetReverseDirection(direction), GridItemState::Cross, false);
 
-        if (next->Degree == 2)
+        if (next->Degree == 1)
+        {
+            RuleSetCornerDifferentState(next, direction);
+        }
+        else if (next->Degree == 2)
         {
             next->SolverState = SolverGridItemState::Completed;
             RuleSetCornerSameState(next, direction, GridItemState::Line);
@@ -765,10 +777,20 @@ void Solver::RuleCornerHaveSameState(GridItemInfo^ info, Direction direction, Gr
     }
     else if(state == GridItemState::None)
     {
-        if (next->Degree == 2)
+        if (next->Degree == 1)
+        {
+            RuleSetCornerSameState(next, GetReverseDirection(direction), GridItemState::Cross, false);
+            RuleSetCornerDifferentState(next, direction);
+        }
+        else if (next->Degree == 2)
         {
             RuleSetCornerSameState(next, GetReverseDirection(direction), GridItemState::None, false);
             RuleSetCornerSameState(next, direction, GridItemState::None);
+        }
+        else if (next->Degree == 3)
+        {
+            RuleSetCornerSameState(next, GetReverseDirection(direction), GridItemState::Line, false);
+            RuleSetCornerDifferentState(next, direction);
         }
         else
         {
@@ -781,11 +803,11 @@ void Solver::RuleCornerHaveSameState(GridItemInfo^ info, Direction direction, Gr
 void Solver::RuleCornerHaveDifferentState(GridItemInfo^ info, Direction direction)
 {
     auto next = GetExtendedLoopAt(info, direction, 2);
+    RuleSetCornerDifferentState(next, GetReverseDirection(direction), false);
     if (next->IsExtended)
     {
         return;
     }
-    RuleSetCornerDifferentState(next, GetReverseDirection(direction), false);
 
     if (next->Degree == 1)
     {
