@@ -277,6 +277,7 @@ String^ Solver::Solve()
                 continue;
             }
             RuleCycleTest();
+            RuleCycleTestForThree();
             if (mQueue->Size == 0)
             {
                 break;
@@ -589,8 +590,8 @@ void Solver::RuleCheckCell(GridItemInfo^ info)
     {
         for (auto direction : { Direction::LeftTop, Direction::RightTop, Direction::RightBottom, Direction::LeftBottom })
         {
-            GridItemInfo^ sideA = GetExtendedLoopAt(info, RotateDirection(direction, RotateDegree::Counterclockwise45));
-            GridItemInfo^ sideB = GetExtendedLoopAt(info, RotateDirection(direction, RotateDegree::Clockwise45));
+            auto sideA = GetExtendedLoopAt(info, RotateDirection(direction, RotateDegree::Counterclockwise45));
+            auto sideB = GetExtendedLoopAt(info, RotateDirection(direction, RotateDegree::Clockwise45));
 
             if (sideA->State == sideB->State)
             {
@@ -608,8 +609,8 @@ void Solver::RuleCheckCell(GridItemInfo^ info)
         {
             auto cell = GetExtendedLoopAt(info, direction, 2);
             auto reverseDirection = RotateDirection(direction, RotateDegree::Clockwise180);
-            GridItemInfo^ sideA = GetExtendedLoopAt(cell, RotateDirection(reverseDirection, RotateDegree::Counterclockwise45));
-            GridItemInfo^ sideB = GetExtendedLoopAt(cell, RotateDirection(reverseDirection, RotateDegree::Clockwise45));
+            auto sideA = GetExtendedLoopAt(cell, RotateDirection(reverseDirection, RotateDegree::Counterclockwise45));
+            auto sideB = GetExtendedLoopAt(cell, RotateDirection(reverseDirection, RotateDegree::Clockwise45));
 
             if (sideA->State != GridItemState::None && sideB->State != GridItemState::None)
             {
@@ -952,12 +953,95 @@ void Solver::RuleCycleTest()
                     break;
                 }
             }
-            tail->Handled;
+            tail->Handled = true;
+            handledDotSet->Append(tail);
         }
         i++;
     }
     for (auto dot : handledDotSet)
     {
         dot->Handled = false;
+    }
+}
+
+
+void Solver::RuleCycleTestForThree()
+{
+    auto handledDotSet = ref new Vector<GridItemInfo^>();
+    unsigned int i = 0;
+    while (i < mGridThree->Size)
+    {
+        auto info = mGridThree->GetAt(i);
+        if (info->SolverState == SolverGridItemState::Completed)
+        {
+            mGridThree->RemoveAt(i);
+            continue;
+        }
+        for (auto direction : { Direction::LeftTop, Direction::RightTop, Direction::RightBottom, Direction::LeftBottom })
+        {
+            auto sideA = GetExtendedLoopAt(info, RotateDirection(direction, RotateDegree::Counterclockwise45));
+            auto sideB = GetExtendedLoopAt(info, RotateDirection(direction, RotateDegree::Clockwise45));
+            if (sideA->State != GridItemState::Line || sideB->State != GridItemState::Line)
+            {
+                continue;
+            }
+            auto reverseDirection = RotateDirection(direction, RotateDegree::Clockwise180);
+            auto head = GetExtendedLoopAt(info, reverseDirection);
+            if (head->Degree != 1)
+            {
+                continue;
+            }
+
+            auto tail = head;
+            do
+            {
+                for (auto direction :
+                    {
+                        Direction::Left,
+                        Direction::Top,
+                        Direction::Right,
+                        Direction::Bottom
+                    })
+                {
+                    if (GetExtendedLoopAt(tail, direction)->State == GridItemState::Line)
+                    {
+                        auto next = GetExtendedLoopAt(tail, direction, 2);
+                        if (!next->Handled)
+                        {
+                            tail->Handled = true;
+                            handledDotSet->Append(tail);
+                            tail = next;
+                            break;
+                        }
+                    }
+                }
+            } while (tail->Degree == 2);
+
+            auto dotA = GetExtendedLoopAt(info, RotateDirection(direction, RotateDegree::Counterclockwise90));
+            auto dotB = GetExtendedLoopAt(info, RotateDirection(direction, RotateDegree::Clockwise90));
+
+            for (auto direction :
+                {
+                    Direction::Left,
+                    Direction::Top,
+                    Direction::Right,
+                    Direction::Bottom
+                })
+            {
+                auto dot = GetExtendedLoopAt(tail, direction, 2);
+                if (dot == dotA || dot == dotB)
+                {
+                    SetCross(GetExtendedLoopAt(tail, direction));
+                    break;
+                }
+            }
+            tail->Handled = true;
+            handledDotSet->Append(tail);
+        }
+        for (auto dot : handledDotSet)
+        {
+            dot->Handled = false;
+        }
+        i++;
     }
 }

@@ -114,5 +114,6 @@ namespace SlitherLink
         void RuleSetCornerSameState(GridItemInfo^ info, Direction direction, GridItemState state, bool recursive = true);
         void RuleSetCornerDifferentState(GridItemInfo^ info, Direction direction, bool recursive = true);
         void RuleCycleTest();
+        void RuleCycleTestForThree();
     };
 }
