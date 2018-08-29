@@ -5,6 +5,9 @@ using namespace SlitherLink;
 
 using namespace Platform;
 using namespace Platform::Collections;
+#if USE_DELEGATE
+using namespace Windows::UI::Core;
+#endif
 
 Solver::Solver(int row, int col, String^ data)
 {
@@ -35,6 +38,37 @@ Solver::Solver(int row, int col, String^ data)
     myLogW(LOG_DEBUG, LTAG L"[%d][%s] mData->Length = %d, mData = %s", __LINE__, __funcw__, mData->Length(), mData->Data());
     InitExtendedLoop();
 }
+
+
+#if USE_DELEGATE
+void Solver::SetMainDispatcher(CoreDispatcher^ dispatcher)
+{
+    mMainDispatcher = dispatcher;
+}
+
+
+void Solver::UpdateMainView(GridItemInfo^ info, GridItemState state)
+{
+    mMainDispatcher->RunAsync(CoreDispatcherPriority::High, ref new DispatchedHandler([this, info, state]()
+    {
+        switch (state)
+        {
+        case GridItemState::Line:
+            OnSetLine(OnGetExtendedLoopAt(info->Row, info->Column)->View, true);
+            break;
+        case GridItemState::Cross:
+            OnSetCross(OnGetExtendedLoopAt(info->Row, info->Column)->View, true);
+            break;
+        case GridItemState::InSide:
+            OnSetInside(OnGetExtendedLoopAt(info->Row, info->Column)->View, true);
+            break;
+        case GridItemState::OutSide:
+            OnSetOutside(OnGetExtendedLoopAt(info->Row, info->Column)->View, true);
+            break;
+        }
+    }));
+}
+#endif
 
 
 int Solver::GetDataAt(int i, int j)
@@ -392,6 +426,9 @@ bool Solver::SetLine(GridItemInfo^ info)
     else if (info->State == GridItemState::None)
     {
         info->State = GridItemState::Line;
+#if USE_DELEGATE
+        UpdateMainView(info, info->State);
+#endif
         switch (info->Type)
         {
         case GridItemType::HorizontailLine:
@@ -428,6 +465,9 @@ bool Solver::SetCross(GridItemInfo^ info)
     else if (info->State == GridItemState::None)
     {
         info->State = GridItemState::Cross;
+#if USE_DELEGATE
+        UpdateMainView(info, info->State);
+#endif
         UpdateQueue(info);
     }
     return true;
@@ -443,6 +483,9 @@ bool Solver::SetInside(GridItemInfo^ info)
     else if (info->State == GridItemState::None)
     {
         info->State = GridItemState::InSide;
+#if USE_DELEGATE
+        UpdateMainView(info, info->State);
+#endif
     }
     return true;
 }
@@ -457,6 +500,9 @@ bool Solver::SetOutside(GridItemInfo^ info)
     else if (info->State == GridItemState::None)
     {
         info->State = GridItemState::OutSide;
+#if USE_DELEGATE
+        UpdateMainView(info, info->State);
+#endif
     }
     return true;
 }
@@ -1158,6 +1204,111 @@ void Solver::RuleColorTest()
             }
         }
     }
+
+    unsigned int i = 0;
+    auto insideDirectionSet = ref new Vector<Direction>();
+    auto outsideDirectionSet = ref new Vector<Direction>();
+#if false
+    while (i < mGridThree->Size)
+    {
+        auto info = mGridThree->GetAt(i);
+        if (info->SolverState == SolverGridItemState::Completed)
+        {
+            mGridThree->RemoveAt(i);
+            continue;
+        }
+        for (auto direction : { Direction::Left, Direction::Top, Direction::Right, Direction::Bottom })
+        {
+            switch (GetExtendedLoopAt(info, direction, 2)->State)
+            {
+            case GridItemState::InSide:
+                insideDirectionSet->Append(direction);
+                break;
+            case GridItemState::OutSide:
+                outsideDirectionSet->Append(direction);
+                break;
+            }
+        }
+        if (insideDirectionSet->Size > 1)
+        {
+            for (auto insideDirection : insideDirectionSet)
+            {
+                SetLine(GetExtendedLoopAt(info, insideDirection));
+            }
+            insideDirectionSet->Clear();
+            if (outsideDirectionSet->Size == 1)
+            {
+                SetCross(GetExtendedLoopAt(info, outsideDirectionSet->GetAt(0)));
+                outsideDirectionSet->Clear();
+            }
+        }
+        else if (outsideDirectionSet->Size > 1)
+        {
+            for (auto outsideDirection : outsideDirectionSet)
+            {
+                SetLine(GetExtendedLoopAt(info, outsideDirection));
+            }
+            outsideDirectionSet->Clear();
+            if (insideDirectionSet->Size == 1)
+            {
+                SetCross(GetExtendedLoopAt(info, insideDirectionSet->GetAt(0)));
+                insideDirectionSet->Clear();
+            }
+        }
+        i++;
+    }
+#endif
+#if false
+    i = 0;
+    while (i < mGridOne->Size)
+    {
+        auto info = mGridOne->GetAt(i);
+        if (info->SolverState == SolverGridItemState::Completed)
+        {
+            mGridOne->RemoveAt(i);
+            continue;
+        }
+        for (auto direction : { Direction::Left, Direction::Top, Direction::Right, Direction::Bottom })
+        {
+            switch (GetExtendedLoopAt(info, direction, 2)->State)
+            {
+            case GridItemState::InSide:
+                insideDirectionSet->Append(direction);
+                break;
+            case GridItemState::OutSide:
+                outsideDirectionSet->Append(direction);
+                break;
+            }
+        }
+        if (insideDirectionSet->Size > 1)
+        {
+            for (auto insideDirection : insideDirectionSet)
+            {
+                SetCross(GetExtendedLoopAt(info, insideDirection));
+            }
+            insideDirectionSet->Clear();
+            if (outsideDirectionSet->Size == 1)
+            {
+                SetLine(GetExtendedLoopAt(info, outsideDirectionSet->GetAt(0)));
+                outsideDirectionSet->Clear();
+            }
+        }
+        else if (outsideDirectionSet->Size > 1)
+        {
+            for (auto outsideDirection : outsideDirectionSet)
+            {
+                SetCross(GetExtendedLoopAt(info, outsideDirection));
+            }
+            outsideDirectionSet->Clear();
+            if (insideDirectionSet->Size == 1)
+            {
+                SetLine(GetExtendedLoopAt(info, insideDirectionSet->GetAt(0)));
+                insideDirectionSet->Clear();
+            }
+        }
+        i++;
+    }
+#endif
 }
 
 

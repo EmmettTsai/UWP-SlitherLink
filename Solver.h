@@ -43,12 +43,34 @@ namespace SlitherLink
         Clockwise315,
     };
 
+
+#if USE_DELEGATE
+    public delegate void SetInsideHandler(Windows::UI::Xaml::Controls::Border^ item, bool force);
+    public delegate void SetOutsideHandler(Windows::UI::Xaml::Controls::Border^ item, bool force);
+    public delegate void SetLineHandler(Windows::UI::Xaml::Controls::Border^ item, bool force);
+    public delegate void SetCrossHandler(Windows::UI::Xaml::Controls::Border^ item, bool force);
+    public delegate GridItemInfo^ GetExtendedLoopAtHandler(int i, int j);
+#endif
+
     public ref class Solver sealed
     {
     public:
         Solver(int row, int col, Platform::String^ data);
         Platform::String^ Solve();
+#if USE_DELEGATE
+        void SetMainDispatcher(Windows::UI::Core::CoreDispatcher^ dispatcher);
+        event SetLineHandler^ OnSetLine;
+        event SetCrossHandler^ OnSetCross;
+        event SetInsideHandler^ OnSetInside;
+        event SetOutsideHandler^ OnSetOutside;
+        event GetExtendedLoopAtHandler^ OnGetExtendedLoopAt;
+#endif
+
     private:
+#if USE_DELEGATE
+        Windows::UI::Core::CoreDispatcher^ mMainDispatcher;
+        void UpdateMainView(GridItemInfo^ info, GridItemState state);
+#endif
         int mLoopRowSize;
         int mLoopColSize;
         int mRowSize;

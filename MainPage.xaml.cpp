@@ -1733,6 +1733,7 @@ void SlitherLink::MainPage::ClearRecursiveFlag()
 
 void SlitherLink::MainPage::SolveButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
+    SolveButton->IsEnabled = false;
     if (mLoopData == nullptr || mLoopData->Length() != mLoopRowSize * mLoopColSize)
     {
         myLogW(LOG_DEBUG, LTAG L"mLoopData is null = %d", (mLoopData == nullptr));
@@ -1743,10 +1744,44 @@ void SlitherLink::MainPage::SolveButton_Click(Platform::Object^ sender, Windows:
         myLogW(LOG_DEBUG, LTAG L"mLoopRowSize * mLoopColSize = %d", mLoopRowSize * mLoopColSize);
         return;
     }
+#if false
     Solver^ solver = ref new Solver(mLoopRowSize, mLoopColSize, mLoopData);
+#if USE_DELEGATE
+    solver->SetMainDispatcher(this->Dispatcher);
+    solver->OnSetLine += ref new SlitherLink::SetLineHandler(this, &SlitherLink::MainPage::SetLine);
+    solver->OnSetCross += ref new SlitherLink::SetCrossHandler(this, &SlitherLink::MainPage::SetCross);
+    solver->OnSetInside += ref new SlitherLink::SetInsideHandler(this, &SlitherLink::MainPage::SetInside);
+    solver->OnSetOutside += ref new SlitherLink::SetOutsideHandler(this, &SlitherLink::MainPage::SetOutside);
+    solver->OnGetExtendedLoopAt += ref new SlitherLink::GetExtendedLoopAtHandler(this, &SlitherLink::MainPage::GetExtendedLoopAt);
+#endif
     mSolvedResult = solver->Solve();
     myLogW(LOG_DEBUG, LTAG L"mSolvedResult: %s", mSolvedResult->Data());
+#if !USE_DELEGATE
     ApplySolvedResult();
+#endif
+#else
+    create_task(create_async([this]()
+    {
+        Solver^ solver = ref new Solver(mLoopRowSize, mLoopColSize, mLoopData);
+#if USE_DELEGATE
+        solver->SetMainDispatcher(this->Dispatcher);
+        solver->OnSetLine += ref new SlitherLink::SetLineHandler(this, &SlitherLink::MainPage::SetLine);
+        solver->OnSetCross += ref new SlitherLink::SetCrossHandler(this, &SlitherLink::MainPage::SetCross);
+        solver->OnSetInside += ref new SlitherLink::SetInsideHandler(this, &SlitherLink::MainPage::SetInside);
+        solver->OnSetOutside += ref new SlitherLink::SetOutsideHandler(this, &SlitherLink::MainPage::SetOutside);
+        solver->OnGetExtendedLoopAt += ref new SlitherLink::GetExtendedLoopAtHandler(this, &SlitherLink::MainPage::GetExtendedLoopAt);
+#endif
+        mSolvedResult = solver->Solve();
+        myLogW(LOG_DEBUG, LTAG L"mSolvedResult: %s", mSolvedResult->Data());
+#if !USE_DELEGATE
+        this->Dispatcher->RunAsync(CoreDispatcherPriority::Normal, ref new DispatchedHandler([this]()
+        {
+            ApplySolvedResult();
+            SolveButton->IsEnabled = true;
+        }));
+#endif
+    }));
+#endif
 }
 
 
