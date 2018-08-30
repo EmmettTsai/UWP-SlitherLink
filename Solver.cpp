@@ -1208,7 +1208,6 @@ void Solver::RuleColorTest()
     unsigned int i = 0;
     auto insideDirectionSet = ref new Vector<Direction>();
     auto outsideDirectionSet = ref new Vector<Direction>();
-#if false
     while (i < mGridThree->Size)
     {
         auto info = mGridThree->GetAt(i);
@@ -1235,11 +1234,9 @@ void Solver::RuleColorTest()
             {
                 SetLine(GetExtendedLoopAt(info, insideDirection));
             }
-            insideDirectionSet->Clear();
             if (outsideDirectionSet->Size == 1)
             {
                 SetCross(GetExtendedLoopAt(info, outsideDirectionSet->GetAt(0)));
-                outsideDirectionSet->Clear();
             }
         }
         else if (outsideDirectionSet->Size > 1)
@@ -1248,17 +1245,15 @@ void Solver::RuleColorTest()
             {
                 SetLine(GetExtendedLoopAt(info, outsideDirection));
             }
-            outsideDirectionSet->Clear();
             if (insideDirectionSet->Size == 1)
             {
                 SetCross(GetExtendedLoopAt(info, insideDirectionSet->GetAt(0)));
-                insideDirectionSet->Clear();
             }
         }
+        insideDirectionSet->Clear();
+        outsideDirectionSet->Clear();
         i++;
     }
-#endif
-#if false
     i = 0;
     while (i < mGridOne->Size)
     {
@@ -1286,11 +1281,9 @@ void Solver::RuleColorTest()
             {
                 SetCross(GetExtendedLoopAt(info, insideDirection));
             }
-            insideDirectionSet->Clear();
             if (outsideDirectionSet->Size == 1)
             {
                 SetLine(GetExtendedLoopAt(info, outsideDirectionSet->GetAt(0)));
-                outsideDirectionSet->Clear();
             }
         }
         else if (outsideDirectionSet->Size > 1)
@@ -1299,16 +1292,15 @@ void Solver::RuleColorTest()
             {
                 SetCross(GetExtendedLoopAt(info, outsideDirection));
             }
-            outsideDirectionSet->Clear();
             if (insideDirectionSet->Size == 1)
             {
                 SetLine(GetExtendedLoopAt(info, insideDirectionSet->GetAt(0)));
-                insideDirectionSet->Clear();
             }
         }
+        insideDirectionSet->Clear();
+        outsideDirectionSet->Clear();
         i++;
     }
-#endif
 }
 
 
