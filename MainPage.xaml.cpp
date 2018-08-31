@@ -10,7 +10,6 @@
 #include <locale.h>
 #include "MainPage.xaml.h"
 #include "ShaderPair.h"
-#include "Solver.h"
 
 using namespace SlitherLink;
 
@@ -700,6 +699,28 @@ void MainPage::SetSide(Windows::UI::Xaml::Controls::Border^ item, IndicatorState
 }
 
 
+void MainPage::SetState(GridItemInfo^ info, GridItemState state)
+{
+    switch (state)
+    {
+    case GridItemState::Line:
+        SetLine(info->View);
+        break;
+    case GridItemState::Cross:
+        SetCross(info->View);
+        break;
+    case GridItemState::InSide:
+        SetInside(info->View);
+        break;
+    case GridItemState::OutSide:
+        SetOutside(info->View);
+        break;
+    case GridItemState::None:
+        SetErase(info->View);
+    }
+}
+
+
 void MainPage::Update(Object^ sender, bool isLeft)
 {
     Border^ item = (Border^)sender;
@@ -1166,6 +1187,30 @@ inline GridItemInfo^ SlitherLink::MainPage::GetExtendedLoopAt(int i, int j)
 }
 
 
+GridItemInfo^ SlitherLink::MainPage::GetExtendedLoopAt(GridItemInfo^ info, Direction direction, int scale)
+{
+    switch (direction)
+    {
+    case Direction::LeftTop:
+        return GetExtendedLoopAt(info->Row - scale, info->Column - scale);
+    case Direction::Top:
+        return GetExtendedLoopAt(info->Row - scale, info->Column);
+    case Direction::RightTop:
+        return GetExtendedLoopAt(info->Row - scale, info->Column + scale);
+    case Direction::Right:
+        return GetExtendedLoopAt(info->Row, info->Column + scale);
+    case Direction::RightBottom:
+        return GetExtendedLoopAt(info->Row + scale, info->Column + scale);
+    case Direction::Bottom:
+        return GetExtendedLoopAt(info->Row + scale, info->Column);
+    case Direction::LeftBottom:
+        return GetExtendedLoopAt(info->Row + scale, info->Column - scale);
+    case Direction::Left:
+        return GetExtendedLoopAt(info->Row, info->Column - scale);
+    }
+}
+
+
 Windows::UI::Xaml::Controls::RadioButton^ SlitherLink::MainPage::CreateShaderPair(Windows::UI::Color left, Windows::UI::Color right)
 {
     return CreateShaderPair(ref new SolidColorBrush(left), ref new SolidColorBrush(right));
@@ -1597,121 +1642,31 @@ void SlitherLink::MainPage::SetCellStateRecursive(GridItemInfo^ info, GridItemSt
     {
         return;
     }
-    info->RecursiveFlag = true;
-    switch (state)
+    auto stack = ref new Vector<GridItemInfo^>();
+    SetState(info, state);
+    stack->Append(info);
+    while (stack->Size > 0)
     {
-    case GridItemState::InSide:
-        SetInside(info->View);
-        break;
-    case GridItemState::OutSide:
-        SetOutside(info->View);
-        break;
-    case GridItemState::None:
-        SetErase(info->View);
-        break;
-    }
+        auto cell = stack->GetAt(0);
+        cell->RecursiveFlag = true;
+        stack->RemoveAt(0);
 
-    GridItemInfo^ nextInfo;
-    int row = info->Row;
-    int col = info->Column;
-
-    // up
-    if (row - 2 > mRowStart)
-    {
-        auto side = GetExtendedLoopAt(row - 1, col);
-        nextInfo = GetExtendedLoopAt(row - 2, col);
-        if (side->State == GridItemState::Cross)
+        for (auto direction : { Direction::Bottom, Direction::Right, Direction::Top, Direction::Left })
         {
-            SetCellStateRecursive(nextInfo, state);
-        }
-        else if (side->State == GridItemState::Line)
-        {
-            switch (state)
+            auto nextCell = GetExtendedLoopAt(cell, direction, 2);
+            if (!nextCell->RecursiveFlag && !nextCell->IsExtended)
             {
-            case GridItemState::InSide:
-                SetCellStateRecursive(nextInfo, GridItemState::OutSide);
-                break;
-            case GridItemState::OutSide:
-                SetCellStateRecursive(nextInfo, GridItemState::InSide);
-                break;
-            case GridItemState::None:
-                SetCellStateRecursive(nextInfo, GridItemState::None);
-                break;
-            }
-        }
-    }
-    // right
-    if (col + 2 < mColEnd)
-    {
-        auto side = GetExtendedLoopAt(row, col + 1);
-        nextInfo = GetExtendedLoopAt(row, col + 2);
-        if (side->State == GridItemState::Cross)
-        {
-            SetCellStateRecursive(nextInfo, state);
-        }
-        else if (side->State == GridItemState::Line)
-        {
-            switch (state)
-            {
-            case GridItemState::InSide:
-                SetCellStateRecursive(nextInfo, GridItemState::OutSide);
-                break;
-            case GridItemState::OutSide:
-                SetCellStateRecursive(nextInfo, GridItemState::InSide);
-                break;
-            case GridItemState::None:
-                SetCellStateRecursive(nextInfo, GridItemState::None);
-                break;
-            }
-        }
-    }
-    // down
-    if (row + 2 < mRowEnd)
-    {
-        auto side = GetExtendedLoopAt(row + 1, col);
-        nextInfo = GetExtendedLoopAt(row + 2, col);
-        if (side->State == GridItemState::Cross)
-        {
-            SetCellStateRecursive(nextInfo, state);
-        }
-        else if (side->State == GridItemState::Line)
-        {
-            switch (state)
-            {
-            case GridItemState::InSide:
-                SetCellStateRecursive(nextInfo, GridItemState::OutSide);
-                break;
-            case GridItemState::OutSide:
-                SetCellStateRecursive(nextInfo, GridItemState::InSide);
-                break;
-            case GridItemState::None:
-                SetCellStateRecursive(nextInfo, GridItemState::None);
-                break;
-            }
-        }
-    }
-    // left
-    if (col - 2 > mColStart)
-    {
-        auto side = GetExtendedLoopAt(row, col - 1);
-        nextInfo = GetExtendedLoopAt(row, col - 2);
-        if (side->State == GridItemState::Cross)
-        {
-            SetCellStateRecursive(nextInfo, state);
-        }
-        else if (side->State == GridItemState::Line)
-        {
-            switch (state)
-            {
-            case GridItemState::InSide:
-                SetCellStateRecursive(nextInfo, GridItemState::OutSide);
-                break;
-            case GridItemState::OutSide:
-                SetCellStateRecursive(nextInfo, GridItemState::InSide);
-                break;
-            case GridItemState::None:
-                SetCellStateRecursive(nextInfo, GridItemState::None);
-                break;
+                auto side = GetExtendedLoopAt(cell, direction);
+                if (side->State == GridItemState::Cross)
+                {
+                    SetState(nextCell, cell->State);
+                    stack->InsertAt(0, nextCell);
+                }
+                else if (side->State == GridItemState::Line)
+                {
+                    SetState(nextCell, GetReverseState(cell->State));
+                    stack->InsertAt(0, nextCell);
+                }
             }
         }
     }

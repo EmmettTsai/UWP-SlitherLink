@@ -124,7 +124,6 @@ namespace SlitherLink
 
         Direction GetReverseDirection(Direction direction);
         Direction RotateDirection(Direction direction, RotateDegree rotateDegree);
-        GridItemState GetReverseState(GridItemState state);
 
         void ClearRecursiveFlag();
         void SetCellStateRecursive(GridItemInfo^ info, GridItemState state);

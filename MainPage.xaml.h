@@ -9,6 +9,7 @@
 #include "LoopSize.h"
 #include "IndicatorState.h"
 #include "GridItemInfo.h"
+#include "Solver.h"
 
 namespace SlitherLink
 {
@@ -78,6 +79,7 @@ namespace SlitherLink
         void SetLine(Windows::UI::Xaml::Controls::Border^ item, bool force = false);
         void SetCross(Windows::UI::Xaml::Controls::Border^ item, bool force = false);
         void SetErase(Windows::UI::Xaml::Controls::Border^ item, bool force = false);
+        void SetState(GridItemInfo^ info, GridItemState state);
 
         void SetCell(Windows::UI::Xaml::Controls::Border^ item, IndicatorState state);
         void SetSide(Windows::UI::Xaml::Controls::Border^ item, IndicatorState state);
@@ -103,6 +105,7 @@ namespace SlitherLink
 
         inline byte GetLoopAt(int i, int j);
         inline GridItemInfo^ GetExtendedLoopAt(int i, int j);
+        inline GridItemInfo^ GetExtendedLoopAt(GridItemInfo^ info, Direction direction, int scale = 1);
 
         Windows::UI::Xaml::Controls::RadioButton^ mMainShaderPair;
         Windows::UI::Xaml::Controls::RadioButton^ CreateShaderPair(Windows::UI::Color left, Windows::UI::Color right);

@@ -230,15 +230,15 @@ void Solver::InitExtendedLoop()
                     {
                         mLeftBorderCellSet->Append(info);
                     }
-                    else if (i == mRowStart + 1)
+                    if (i == mRowStart + 1)
                     {
                         mTopBorderCellSet->Append(info);
                     }
-                    else if (j == mColEnd - 1)
+                    if (j == mColEnd - 1)
                     {
                         mRightBorderCellSet->Append(info);
                     }
-                    else if (i == mRowEnd - 1)
+                    if (i == mRowEnd - 1)
                     {
                         mBottomBorderCellSet->Append(info);
                     }
@@ -936,23 +936,6 @@ Direction Solver::RotateDirection(Direction direction, RotateDegree rotateDegree
 }
 
 
-GridItemState Solver::GetReverseState(GridItemState state)
-{
-    switch (state)
-    {
-    case GridItemState::Line:
-        return GridItemState::Cross;
-    case GridItemState::Cross:
-        return GridItemState::Line;
-    case GridItemState::InSide:
-        return GridItemState::OutSide;
-    case GridItemState::OutSide:
-        return GridItemState::InSide;
-    }
-    return GridItemState::None;
-}
-
-
 Direction Solver::GetReverseDirection(Direction direction)
 {
     return RotateDirection(direction, RotateDegree::Clockwise180);
@@ -1323,118 +1306,31 @@ void Solver::SetCellStateRecursive(GridItemInfo^ info, GridItemState state)
     {
         return;
     }
-    info->RecursiveFlag = true;
-    switch (state)
+    auto stack = ref new Vector<GridItemInfo^>();
+    SetState(info, state);
+    stack->Append(info);
+    while (stack->Size > 0)
     {
-    case GridItemState::InSide:
-        SetInside(info);
-        break;
-    case GridItemState::OutSide:
-        SetOutside(info);
-        break;
-    }
+        auto cell = stack->GetAt(0);
+        cell->RecursiveFlag = true;
+        stack->RemoveAt(0);
 
-    GridItemInfo^ nextInfo;
-    int row = info->Row;
-    int col = info->Column;
-
-    // up
-    if (row - 2 > mRowStart)
-    {
-        auto side = GetExtendedLoopAt(row - 1, col);
-        nextInfo = GetExtendedLoopAt(row - 2, col);
-        if (side->State == GridItemState::Cross)
+        for (auto direction : { Direction::Bottom, Direction::Right, Direction::Top, Direction::Left })
         {
-            SetCellStateRecursive(nextInfo, state);
-        }
-        else if (side->State == GridItemState::Line)
-        {
-            switch (state)
+            auto nextCell = GetExtendedLoopAt(cell, direction, 2);
+            if (!nextCell->RecursiveFlag && !nextCell->IsExtended)
             {
-            case GridItemState::InSide:
-                SetCellStateRecursive(nextInfo, GridItemState::OutSide);
-                break;
-            case GridItemState::OutSide:
-                SetCellStateRecursive(nextInfo, GridItemState::InSide);
-                break;
-            case GridItemState::None:
-                SetCellStateRecursive(nextInfo, GridItemState::None);
-                break;
-            }
-        }
-    }
-    // right
-    if (col + 2 < mColEnd)
-    {
-        auto side = GetExtendedLoopAt(row, col + 1);
-        nextInfo = GetExtendedLoopAt(row, col + 2);
-        if (side->State == GridItemState::Cross)
-        {
-            SetCellStateRecursive(nextInfo, state);
-        }
-        else if (side->State == GridItemState::Line)
-        {
-            switch (state)
-            {
-            case GridItemState::InSide:
-                SetCellStateRecursive(nextInfo, GridItemState::OutSide);
-                break;
-            case GridItemState::OutSide:
-                SetCellStateRecursive(nextInfo, GridItemState::InSide);
-                break;
-            case GridItemState::None:
-                SetCellStateRecursive(nextInfo, GridItemState::None);
-                break;
-            }
-        }
-    }
-    // down
-    if (row + 2 < mRowEnd)
-    {
-        auto side = GetExtendedLoopAt(row + 1, col);
-        nextInfo = GetExtendedLoopAt(row + 2, col);
-        if (side->State == GridItemState::Cross)
-        {
-            SetCellStateRecursive(nextInfo, state);
-        }
-        else if (side->State == GridItemState::Line)
-        {
-            switch (state)
-            {
-            case GridItemState::InSide:
-                SetCellStateRecursive(nextInfo, GridItemState::OutSide);
-                break;
-            case GridItemState::OutSide:
-                SetCellStateRecursive(nextInfo, GridItemState::InSide);
-                break;
-            case GridItemState::None:
-                SetCellStateRecursive(nextInfo, GridItemState::None);
-                break;
-            }
-        }
-    }
-    // left
-    if (col - 2 > mColStart)
-    {
-        auto side = GetExtendedLoopAt(row, col - 1);
-        nextInfo = GetExtendedLoopAt(row, col - 2);
-        if (side->State == GridItemState::Cross)
-        {
-            SetCellStateRecursive(nextInfo, state);
-        }
-        else if (side->State == GridItemState::Line)
-        {
-            switch (state)
-            {
-            case GridItemState::InSide:
-                SetCellStateRecursive(nextInfo, GridItemState::OutSide);
-                break;
-            case GridItemState::OutSide:
-                SetCellStateRecursive(nextInfo, GridItemState::InSide);
-                break;
-            case GridItemState::None:
-                SetCellStateRecursive(nextInfo, GridItemState::None);
-                break;
+                auto side = GetExtendedLoopAt(cell, direction);
+                if (side->State == GridItemState::Cross)
+                {
+                    SetState(nextCell, cell->State);
+                    stack->InsertAt(0, nextCell);
+                }
+                else if (side->State == GridItemState::Line)
+                {
+                    SetState(nextCell, GetReverseState(cell->State));
+                    stack->InsertAt(0, nextCell);
+                }
             }
         }
     }
