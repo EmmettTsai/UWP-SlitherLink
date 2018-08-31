@@ -1188,101 +1188,109 @@ void Solver::RuleColorTest()
         }
     }
 
-    unsigned int i = 0;
     auto insideDirectionSet = ref new Vector<Direction>();
     auto outsideDirectionSet = ref new Vector<Direction>();
-    while (i < mGridThree->Size)
+    auto noneDirectionSet = ref new Vector<Direction>();
+    for (auto set : { mGridThree, mGridOne })
     {
-        auto info = mGridThree->GetAt(i);
-        if (info->SolverState == SolverGridItemState::Completed)
+        if (set->Size == 0)
         {
-            mGridThree->RemoveAt(i);
             continue;
         }
-        for (auto direction : { Direction::Left, Direction::Top, Direction::Right, Direction::Bottom })
+        unsigned int i = 0;
+        int setDegree = set->GetAt(0)->Degree;
+        while (i < set->Size)
         {
-            switch (GetExtendedLoopAt(info, direction, 2)->State)
+            auto info = set->GetAt(i);
+            if (info->SolverState == SolverGridItemState::Completed)
             {
-            case GridItemState::InSide:
-                insideDirectionSet->Append(direction);
-                break;
-            case GridItemState::OutSide:
-                outsideDirectionSet->Append(direction);
-                break;
+                set->RemoveAt(i);
+                continue;
             }
+            for (auto direction : { Direction::Left, Direction::Top, Direction::Right, Direction::Bottom })
+            {
+                switch (GetExtendedLoopAt(info, direction, 2)->State)
+                {
+                case GridItemState::InSide:
+                    insideDirectionSet->Append(direction);
+                    break;
+                case GridItemState::OutSide:
+                    outsideDirectionSet->Append(direction);
+                    break;
+                case GridItemState::None:
+                    noneDirectionSet->Append(direction);
+                    break;
+                }
+            }
+            if (insideDirectionSet->Size > 1)
+            {
+                for (auto insideDirection : insideDirectionSet)
+                {
+                    if (setDegree == 1)
+                    {
+                        SetCross(GetExtendedLoopAt(info, insideDirection));
+                    }
+                    else if (setDegree == 3)
+                    {
+                        SetLine(GetExtendedLoopAt(info, insideDirection));
+                    }
+                }
+                if (outsideDirectionSet->Size == 1)
+                {
+                    if (setDegree == 1)
+                    {
+                        SetLine(GetExtendedLoopAt(info, outsideDirectionSet->GetAt(0)));
+                    }
+                    else if (setDegree == 3)
+                    {
+                        SetCross(GetExtendedLoopAt(info, outsideDirectionSet->GetAt(0)));
+                    }
+                }
+            }
+            else if (outsideDirectionSet->Size > 1)
+            {
+                for (auto outsideDirection : outsideDirectionSet)
+                {
+                    if (setDegree == 1)
+                    {
+                        SetCross(GetExtendedLoopAt(info, outsideDirection));
+                    }
+                    else if (setDegree == 3)
+                    {
+                        SetLine(GetExtendedLoopAt(info, outsideDirection));
+                    }
+                }
+                if (insideDirectionSet->Size == 1)
+                {
+                    if (setDegree == 1)
+                    {
+                        SetLine(GetExtendedLoopAt(info, insideDirectionSet->GetAt(0)));
+                    }
+                    else if (setDegree == 3)
+                    {
+                        SetCross(GetExtendedLoopAt(info, insideDirectionSet->GetAt(0)));
+                    }
+                }
+            }
+            else if (insideDirectionSet->Size == 1 && outsideDirectionSet->Size == 1)
+            {
+                for (auto noneDirection : noneDirectionSet)
+                {
+                    if (setDegree == 1)
+                    {
+                        SetCross(GetExtendedLoopAt(info, noneDirection));
+                    }
+                    else if (setDegree == 3)
+                    {
+                        SetLine(GetExtendedLoopAt(info, noneDirection));
+                    }
+                }
+            }
+            insideDirectionSet->Clear();
+            outsideDirectionSet->Clear();
+            noneDirectionSet->Clear();
+            i++;
         }
-        if (insideDirectionSet->Size > 1)
-        {
-            for (auto insideDirection : insideDirectionSet)
-            {
-                SetLine(GetExtendedLoopAt(info, insideDirection));
-            }
-            if (outsideDirectionSet->Size == 1)
-            {
-                SetCross(GetExtendedLoopAt(info, outsideDirectionSet->GetAt(0)));
-            }
-        }
-        else if (outsideDirectionSet->Size > 1)
-        {
-            for (auto outsideDirection : outsideDirectionSet)
-            {
-                SetLine(GetExtendedLoopAt(info, outsideDirection));
-            }
-            if (insideDirectionSet->Size == 1)
-            {
-                SetCross(GetExtendedLoopAt(info, insideDirectionSet->GetAt(0)));
-            }
-        }
-        insideDirectionSet->Clear();
-        outsideDirectionSet->Clear();
-        i++;
-    }
-    i = 0;
-    while (i < mGridOne->Size)
-    {
-        auto info = mGridOne->GetAt(i);
-        if (info->SolverState == SolverGridItemState::Completed)
-        {
-            mGridOne->RemoveAt(i);
-            continue;
-        }
-        for (auto direction : { Direction::Left, Direction::Top, Direction::Right, Direction::Bottom })
-        {
-            switch (GetExtendedLoopAt(info, direction, 2)->State)
-            {
-            case GridItemState::InSide:
-                insideDirectionSet->Append(direction);
-                break;
-            case GridItemState::OutSide:
-                outsideDirectionSet->Append(direction);
-                break;
-            }
-        }
-        if (insideDirectionSet->Size > 1)
-        {
-            for (auto insideDirection : insideDirectionSet)
-            {
-                SetCross(GetExtendedLoopAt(info, insideDirection));
-            }
-            if (outsideDirectionSet->Size == 1)
-            {
-                SetLine(GetExtendedLoopAt(info, outsideDirectionSet->GetAt(0)));
-            }
-        }
-        else if (outsideDirectionSet->Size > 1)
-        {
-            for (auto outsideDirection : outsideDirectionSet)
-            {
-                SetCross(GetExtendedLoopAt(info, outsideDirection));
-            }
-            if (insideDirectionSet->Size == 1)
-            {
-                SetLine(GetExtendedLoopAt(info, insideDirectionSet->GetAt(0)));
-            }
-        }
-        insideDirectionSet->Clear();
-        outsideDirectionSet->Clear();
-        i++;
     }
 }
 
