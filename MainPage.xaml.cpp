@@ -73,6 +73,9 @@ https://msdn.microsoft.com/en-us/library/windows/desktop/bb189018.aspx
 
 Create a multi-instance Universal Windows App
 https://docs.microsoft.com/zh-tw/windows/uwp/launch-resume/multi-instance-uwp
+
+https://docs.microsoft.com/en-us/cpp/cppcx/weak-references-and-breaking-cycles-c-cx?view=vs-2017
+https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/events/how-to-subscribe-to-and-unsubscribe-from-events
 */
 
 
@@ -247,7 +250,10 @@ void MainPage::InitHttpClient()
 
 void MainPage::Init(int row, int col)
 {
-    // TODO: need clear previous event handler?
+    for (auto info : mExtendedLoop)
+    {
+        info->View = nullptr;
+    }
     RootCanvas->Children->Clear();
     mExtendedLoop->Clear();
 
