@@ -1364,31 +1364,69 @@ void Solver::RuleColorTest()
         for (auto direction : { Direction::LeftTop, Direction::RightTop, Direction::RightBottom, Direction::LeftBottom })
         {
             auto reverseDirection = GetReverseDirection(direction);
-            auto cellA = GetExtendedLoopAt(cell, RotateDirection(reverseDirection, RotateDegree::Counterclockwise45), 2);
-            auto cellB = GetExtendedLoopAt(cell, RotateDirection(reverseDirection, RotateDegree::Clockwise45), 2);
+            bool sameColor;
+            GridItemState state;
+            GridItemInfo^ cellA = GetExtendedLoopAt(cell, RotateDirection(reverseDirection, RotateDegree::Counterclockwise45), 2);
+            GridItemInfo^ cellB = GetExtendedLoopAt(cell, RotateDirection(reverseDirection, RotateDegree::Clockwise45), 2);
+
             if (cellA->State != GridItemState::None && cellB->State != GridItemState::None)
             {
-                bool sameColor = cellA->State == cellB->State;
-                auto state = cellA->State;
-                auto nextCell = cell;
-                do
+                sameColor = cellA->State == cellB->State;
+                state = cellA->State;
+            }
+            else
+            {
+                auto sideA = GetExtendedLoopAt(cell, RotateDirection(reverseDirection, RotateDegree::Counterclockwise45));
+                auto sideB = GetExtendedLoopAt(cell, RotateDirection(reverseDirection, RotateDegree::Clockwise45));
+                if (sideA->State != GridItemState::None && sideB->State != GridItemState::None)
                 {
-                    cellA = GetExtendedLoopAt(nextCell, RotateDirection(direction, RotateDegree::Counterclockwise45), 2);
-                    cellB = GetExtendedLoopAt(nextCell, RotateDirection(direction, RotateDegree::Clockwise45), 2);
-                    if (sameColor)
+                    sameColor = sideA->State == sideB->State;
+                    state = GridItemState::None;
+                }
+                else
+                {
+                    sideA = GetExtendedLoopAt(cellA, RotateDirection(reverseDirection, RotateDegree::Clockwise45));
+                    sideB = GetExtendedLoopAt(cellB, RotateDirection(reverseDirection, RotateDegree::Counterclockwise45));
+                    if (sideA->State != GridItemState::None && sideB->State != GridItemState::None)
                     {
-                        state = GetReverseState(state);
-                        SetCellStateRecursive(cellA, state);
-                        SetCellStateRecursive(cellB, state);
+                        sameColor = sideA->State == sideB->State;
+                        state = GridItemState::None;
                     }
                     else
                     {
-                        SetCellStateRecursive(cellA, GetReverseState(cellB->State));
-                        SetCellStateRecursive(cellB, GetReverseState(cellA->State));
+                        continue;
                     }
-                    nextCell = GetExtendedLoopAt(nextCell, direction, 2);
-                } while (nextCell->Degree == 2);
+                }
             }
+            auto nextCell = cell;
+            do
+            {
+                cellA = GetExtendedLoopAt(nextCell, RotateDirection(direction, RotateDegree::Counterclockwise45), 2);
+                cellB = GetExtendedLoopAt(nextCell, RotateDirection(direction, RotateDegree::Clockwise45), 2);
+                if (sameColor)
+                {
+                    state = GetReverseState(state);
+                    if (state == GridItemState::None)
+                    {
+                        if (cellA->State != GridItemState::None)
+                        {
+                            state = cellA->State;
+                        }
+                        else if (cellB->State != GridItemState::None)
+                        {
+                            state = cellB->State;
+                        }
+                    }
+                    SetCellStateRecursive(cellA, state);
+                    SetCellStateRecursive(cellB, state);
+                }
+                else
+                {
+                    SetCellStateRecursive(cellA, GetReverseState(cellB->State));
+                    SetCellStateRecursive(cellB, GetReverseState(cellA->State));
+                }
+                nextCell = GetExtendedLoopAt(nextCell, direction, 2);
+            } while (nextCell->Degree == 2);
         }
     }
 
