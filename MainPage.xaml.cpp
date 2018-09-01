@@ -564,7 +564,7 @@ void MainPage::Grid_PointerEntered(Platform::Object^ sender, Windows::UI::Xaml::
 
 void MainPage::SetInside(Windows::UI::Xaml::Controls::Border^ item, bool force)
 {
-    if (!mEnableSetCell && !force)
+    if ((mSolving || !mEnableSetCell) && !force)
     {
         return;
     }
@@ -581,7 +581,7 @@ void MainPage::SetInside(Windows::UI::Xaml::Controls::Border^ item, bool force)
 
 void MainPage::SetOutside(Windows::UI::Xaml::Controls::Border^ item, bool force)
 {
-    if (!mEnableSetCell && !force)
+    if ((mSolving || !mEnableSetCell) && !force)
     {
         return;
     }
@@ -598,7 +598,7 @@ void MainPage::SetOutside(Windows::UI::Xaml::Controls::Border^ item, bool force)
 
 void MainPage::SetLine(Windows::UI::Xaml::Controls::Border^ item, bool force)
 {
-    if (!mEnableSetSide && !force)
+    if ((mSolving || !mEnableSetSide) && !force)
     {
         return;
     }
@@ -616,7 +616,7 @@ void MainPage::SetLine(Windows::UI::Xaml::Controls::Border^ item, bool force)
 
 void MainPage::SetCross(Windows::UI::Xaml::Controls::Border^ item, bool force)
 {
-    if (!mEnableSetSide && !force)
+    if ((mSolving || !mEnableSetSide) && !force)
     {
         return;
     }
@@ -644,7 +644,7 @@ void MainPage::SetCross(Windows::UI::Xaml::Controls::Border^ item, bool force)
 void MainPage::SetErase(Windows::UI::Xaml::Controls::Border^ item, bool force)
 {
     auto info = (GridItemInfo^)item->Tag;
-    if (info->IsLocked)
+    if ((info->IsLocked || mSolving) && !force)
     {
         return;
     }
@@ -705,24 +705,24 @@ void MainPage::SetSide(Windows::UI::Xaml::Controls::Border^ item, IndicatorState
 }
 
 
-void MainPage::SetState(GridItemInfo^ info, GridItemState state)
+void MainPage::SetState(GridItemInfo^ info, GridItemState state, bool force)
 {
     switch (state)
     {
     case GridItemState::Line:
-        SetLine(info->View);
+        SetLine(info->View, force);
         break;
     case GridItemState::Cross:
-        SetCross(info->View);
+        SetCross(info->View, force);
         break;
     case GridItemState::InSide:
-        SetInside(info->View);
+        SetInside(info->View, force);
         break;
     case GridItemState::OutSide:
-        SetOutside(info->View);
+        SetOutside(info->View, force);
         break;
     case GridItemState::None:
-        SetErase(info->View);
+        SetErase(info->View, force);
     }
 }
 
@@ -1193,7 +1193,7 @@ inline GridItemInfo^ SlitherLink::MainPage::GetExtendedLoopAt(int i, int j)
 }
 
 
-GridItemInfo^ SlitherLink::MainPage::GetExtendedLoopAt(GridItemInfo^ info, Direction direction, int scale)
+inline GridItemInfo^ SlitherLink::MainPage::GetExtendedLoopAt(GridItemInfo^ info, Direction direction, int scale)
 {
     switch (direction)
     {
@@ -1694,7 +1694,6 @@ void SlitherLink::MainPage::ClearRecursiveFlag()
 
 void SlitherLink::MainPage::SolveButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
-    SolveButton->IsEnabled = false;
     if (mLoopData == nullptr || mLoopData->Length() != mLoopRowSize * mLoopColSize)
     {
         myLogW(LOG_DEBUG, LTAG L"mLoopData is null = %d", (mLoopData == nullptr));
@@ -1705,44 +1704,37 @@ void SlitherLink::MainPage::SolveButton_Click(Platform::Object^ sender, Windows:
         myLogW(LOG_DEBUG, LTAG L"mLoopRowSize * mLoopColSize = %d", mLoopRowSize * mLoopColSize);
         return;
     }
-#if false
-    Solver^ solver = ref new Solver(mLoopRowSize, mLoopColSize, mLoopData);
-#if USE_DELEGATE
-    solver->SetMainDispatcher(this->Dispatcher);
-    solver->OnSetLine += ref new SlitherLink::SetLineHandler(this, &SlitherLink::MainPage::SetLine);
-    solver->OnSetCross += ref new SlitherLink::SetCrossHandler(this, &SlitherLink::MainPage::SetCross);
-    solver->OnSetInside += ref new SlitherLink::SetInsideHandler(this, &SlitherLink::MainPage::SetInside);
-    solver->OnSetOutside += ref new SlitherLink::SetOutsideHandler(this, &SlitherLink::MainPage::SetOutside);
-    solver->OnGetExtendedLoopAt += ref new SlitherLink::GetExtendedLoopAtHandler(this, &SlitherLink::MainPage::GetExtendedLoopAt);
-#endif
-    mSolvedResult = solver->Solve();
-    myLogW(LOG_DEBUG, LTAG L"mSolvedResult: %s", mSolvedResult->Data());
-#if !USE_DELEGATE
-    ApplySolvedResult();
-#endif
-#else
+    SolveButton->IsEnabled = false;
+    ResetGameButton->IsEnabled = false;
+    ResetToLockedButton->IsEnabled = false;
+    MergeSlotButton->IsEnabled = false;
+    LoadFromUrlButton->IsEnabled = false;
+    OpenFileButton->IsEnabled = false;
+    mSolving = true;
     create_task(create_async([this]()
     {
         Solver^ solver = ref new Solver(mLoopRowSize, mLoopColSize, mLoopData);
 #if USE_DELEGATE
         solver->SetMainDispatcher(this->Dispatcher);
-        solver->OnSetLine += ref new SlitherLink::SetLineHandler(this, &SlitherLink::MainPage::SetLine);
-        solver->OnSetCross += ref new SlitherLink::SetCrossHandler(this, &SlitherLink::MainPage::SetCross);
-        solver->OnSetInside += ref new SlitherLink::SetInsideHandler(this, &SlitherLink::MainPage::SetInside);
-        solver->OnSetOutside += ref new SlitherLink::SetOutsideHandler(this, &SlitherLink::MainPage::SetOutside);
-        solver->OnGetExtendedLoopAt += ref new SlitherLink::GetExtendedLoopAtHandler(this, &SlitherLink::MainPage::GetExtendedLoopAt);
+        solver->OnSetState += ref new SlitherLink::SetStateHandler(this, &SlitherLink::MainPage::SetState);
+        solver->SetMainExtendedLoop(mExtendedLoop);
 #endif
         mSolvedResult = solver->Solve();
         myLogW(LOG_DEBUG, LTAG L"mSolvedResult: %s", mSolvedResult->Data());
-#if !USE_DELEGATE
         this->Dispatcher->RunAsync(CoreDispatcherPriority::Normal, ref new DispatchedHandler([this]()
         {
+#if !USE_DELEGATE
             ApplySolvedResult();
+#endif
+            mSolving = false;
             SolveButton->IsEnabled = true;
+            ResetGameButton->IsEnabled = true;
+            ResetToLockedButton->IsEnabled = true;
+            MergeSlotButton->IsEnabled = true;
+            LoadFromUrlButton->IsEnabled = true;
+            OpenFileButton->IsEnabled = true;
         }));
-#endif
     }));
-#endif
 }
 
 

@@ -45,11 +45,7 @@ namespace SlitherLink
 
 
 #if USE_DELEGATE
-    public delegate void SetInsideHandler(Windows::UI::Xaml::Controls::Border^ item, bool force);
-    public delegate void SetOutsideHandler(Windows::UI::Xaml::Controls::Border^ item, bool force);
-    public delegate void SetLineHandler(Windows::UI::Xaml::Controls::Border^ item, bool force);
-    public delegate void SetCrossHandler(Windows::UI::Xaml::Controls::Border^ item, bool force);
-    public delegate GridItemInfo^ GetExtendedLoopAtHandler(int i, int j);
+    public delegate void SetStateHandler(GridItemInfo^ info, GridItemState state, bool force);
 #endif
 
     public ref class Solver sealed
@@ -59,11 +55,8 @@ namespace SlitherLink
         Platform::String^ Solve();
 #if USE_DELEGATE
         void SetMainDispatcher(Windows::UI::Core::CoreDispatcher^ dispatcher);
-        event SetLineHandler^ OnSetLine;
-        event SetCrossHandler^ OnSetCross;
-        event SetInsideHandler^ OnSetInside;
-        event SetOutsideHandler^ OnSetOutside;
-        event GetExtendedLoopAtHandler^ OnGetExtendedLoopAt;
+        void SetMainExtendedLoop(Windows::Foundation::Collections::IVector<GridItemInfo^>^ mainExtendedLoop);
+        event SetStateHandler^ OnSetState;
 #endif
 
     private:
@@ -85,6 +78,7 @@ namespace SlitherLink
         int mExtendedRowSize;
         int mExtendedColSize;
         Windows::Foundation::Collections::IVector<GridItemInfo^>^ mExtendedLoop;
+        Windows::Foundation::Collections::IVector<GridItemInfo^>^ mMainExtendedLoop;
 
         Windows::Foundation::Collections::IVector<GridItemInfo^>^ mGridZero;
         Windows::Foundation::Collections::IVector<GridItemInfo^>^ mGridOne;
@@ -103,6 +97,7 @@ namespace SlitherLink
         inline GridItemInfo^ GetExtendedLoopAt(int i, int j);
         inline GridItemInfo^ GetExtendedLoopAt(GridItemInfo^ info, int i, int j);
         inline GridItemInfo^ GetExtendedLoopAt(GridItemInfo^ info, Direction direction, int scale = 1);
+        inline GridItemInfo^ Solver::GetMainExtendedLoopAt(int i, int j);
         void InitExtendedLoop();
 
         Platform::String^ GetResult();

@@ -11,4 +11,4 @@
 #include "log.h"
 
 #define BUG_FIXED false
-#define USE_DELEGATE false
+#define USE_DELEGATE true

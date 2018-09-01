@@ -6,6 +6,7 @@ using namespace SlitherLink;
 using namespace Platform;
 using namespace Platform::Collections;
 #if USE_DELEGATE
+using namespace Windows::Foundation::Collections;
 using namespace Windows::UI::Core;
 #endif
 
@@ -47,31 +48,24 @@ void Solver::SetMainDispatcher(CoreDispatcher^ dispatcher)
 }
 
 
+void Solver::SetMainExtendedLoop(IVector<GridItemInfo^>^ mainExtendedLoop)
+{
+    mMainExtendedLoop = mainExtendedLoop;
+}
+
+
 void Solver::UpdateMainView(GridItemInfo^ info, GridItemState state)
 {
+    //mMainDispatcher->RunAsync(CoreDispatcherPriority::High, ref new DispatchedHandler([this, info, state]()
     mMainDispatcher->RunAsync(CoreDispatcherPriority::High, ref new DispatchedHandler([this, info, state]()
     {
-        switch (state)
-        {
-        case GridItemState::Line:
-            OnSetLine(OnGetExtendedLoopAt(info->Row, info->Column)->View, true);
-            break;
-        case GridItemState::Cross:
-            OnSetCross(OnGetExtendedLoopAt(info->Row, info->Column)->View, true);
-            break;
-        case GridItemState::InSide:
-            OnSetInside(OnGetExtendedLoopAt(info->Row, info->Column)->View, true);
-            break;
-        case GridItemState::OutSide:
-            OnSetOutside(OnGetExtendedLoopAt(info->Row, info->Column)->View, true);
-            break;
-        }
+        OnSetState(GetMainExtendedLoopAt(info->Row, info->Column), state, true);
     }));
 }
 #endif
 
 
-int Solver::GetDataAt(int i, int j)
+inline int Solver::GetDataAt(int i, int j)
 {
     switch (mData->Data()[i * mLoopColSize + j])
     {
@@ -88,19 +82,25 @@ int Solver::GetDataAt(int i, int j)
 }
 
 
-GridItemInfo^ Solver::GetExtendedLoopAt(int i, int j)
+inline GridItemInfo^ Solver::GetExtendedLoopAt(int i, int j)
 {
     return mExtendedLoop->GetAt(i * mExtendedColSize + j);
 }
 
 
-GridItemInfo^ Solver::GetExtendedLoopAt(GridItemInfo^ info, int i, int j)
+inline GridItemInfo^ Solver::GetMainExtendedLoopAt(int i, int j)
+{
+    return mMainExtendedLoop->GetAt(i * mExtendedColSize + j);
+}
+
+
+inline GridItemInfo^ Solver::GetExtendedLoopAt(GridItemInfo^ info, int i, int j)
 {
     return GetExtendedLoopAt(info->Row + i, info->Column + j);
 }
 
 
-GridItemInfo^ Solver::GetExtendedLoopAt(GridItemInfo^ info, Direction direction, int scale)
+inline GridItemInfo^ Solver::GetExtendedLoopAt(GridItemInfo^ info, Direction direction, int scale)
 {
     switch (direction)
     {

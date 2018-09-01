@@ -33,7 +33,6 @@ namespace SlitherLink
         Windows::Foundation::Collections::IVector<byte>^ mLoop;
         Windows::Foundation::Collections::IVector<GridItemInfo^>^ mExtendedLoop;
         Platform::String^ mLoopData;
-        Windows::Foundation::Collections::IVector<Platform::String^>^ mRule;
         IndicatorState mIndicatorState;
         bool mEnableSetCell;
         bool mEnableSetSide;
@@ -63,6 +62,7 @@ namespace SlitherLink
         int mExtendedRowSize;
         int mExtendedColSize;
         Platform::String^ mSolvedResult;
+        bool mSolving = false;
 
         void InitView();
         void Init(int row, int col);
@@ -79,7 +79,7 @@ namespace SlitherLink
         void SetLine(Windows::UI::Xaml::Controls::Border^ item, bool force = false);
         void SetCross(Windows::UI::Xaml::Controls::Border^ item, bool force = false);
         void SetErase(Windows::UI::Xaml::Controls::Border^ item, bool force = false);
-        void SetState(GridItemInfo^ info, GridItemState state);
+        void SetState(GridItemInfo^ info, GridItemState state, bool force = false);
 
         void SetCell(Windows::UI::Xaml::Controls::Border^ item, IndicatorState state);
         void SetSide(Windows::UI::Xaml::Controls::Border^ item, IndicatorState state);
