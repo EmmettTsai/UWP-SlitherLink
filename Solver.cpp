@@ -56,7 +56,6 @@ void Solver::SetMainExtendedLoop(IVector<GridItemInfo^>^ mainExtendedLoop)
 
 void Solver::UpdateMainView(GridItemInfo^ info, GridItemState state)
 {
-    //mMainDispatcher->RunAsync(CoreDispatcherPriority::High, ref new DispatchedHandler([this, info, state]()
     mMainDispatcher->RunAsync(CoreDispatcherPriority::High, ref new DispatchedHandler([this, info, state]()
     {
         OnSetState(GetMainExtendedLoopAt(info->Row, info->Column), state, true);
@@ -419,6 +418,10 @@ void Solver::UpdateQueue(GridItemInfo^ info)
 
 bool Solver::SetLine(GridItemInfo^ info)
 {
+    if (info->IsExtended)
+    {
+        return true;
+    }
     if (info->State == GridItemState::Cross)
     {
         return false;
@@ -458,6 +461,10 @@ bool Solver::SetLine(GridItemInfo^ info)
 
 bool Solver::SetCross(GridItemInfo^ info)
 {
+    if (info->IsExtended)
+    {
+        return true;
+    }
     if (info->State == GridItemState::Line)
     {
         return false;
@@ -476,6 +483,10 @@ bool Solver::SetCross(GridItemInfo^ info)
 
 bool Solver::SetInside(GridItemInfo^ info)
 {
+    if (info->IsExtended)
+    {
+        return true;
+    }
     if (info->State == GridItemState::OutSide)
     {
         return false;
@@ -493,6 +504,10 @@ bool Solver::SetInside(GridItemInfo^ info)
 
 bool Solver::SetOutside(GridItemInfo^ info)
 {
+    if (info->IsExtended)
+    {
+        return true;
+    }
     if (info->State == GridItemState::InSide)
     {
         return false;
@@ -1196,7 +1211,7 @@ void Solver::RuleColorTest()
     auto insideDirectionSet = ref new Vector<Direction>();
     auto outsideDirectionSet = ref new Vector<Direction>();
     auto noneDirectionSet = ref new Vector<Direction>();
-    for (auto set : { mGridThree, mGridOne })
+    for (auto set : { mGridOne, mGridTwo, mGridThree })
     {
         if (set->Size == 0)
         {
@@ -1251,6 +1266,13 @@ void Solver::RuleColorTest()
                         SetCross(GetExtendedLoopAt(info, outsideDirectionSet->GetAt(0)));
                     }
                 }
+                if (setDegree == 2)
+                {
+                    for (auto noneDirection : noneDirectionSet)
+                    {
+                        SetOutside(GetExtendedLoopAt(info, noneDirection, 2));
+                    }
+                }
             }
             else if (outsideDirectionSet->Size > 1)
             {
@@ -1276,6 +1298,13 @@ void Solver::RuleColorTest()
                         SetCross(GetExtendedLoopAt(info, insideDirectionSet->GetAt(0)));
                     }
                 }
+                if (setDegree == 2)
+                {
+                    for (auto noneDirection : noneDirectionSet)
+                    {
+                        SetInside(GetExtendedLoopAt(info, noneDirection, 2));
+                    }
+                }
             }
             else if (insideDirectionSet->Size == 1 && outsideDirectionSet->Size == 1)
             {
@@ -1295,6 +1324,39 @@ void Solver::RuleColorTest()
             outsideDirectionSet->Clear();
             noneDirectionSet->Clear();
             i++;
+        }
+    }
+
+    for (GridItemInfo^ cell : mGridTwo)
+    {
+        for (auto direction : { Direction::LeftTop, Direction::RightTop, Direction::RightBottom, Direction::LeftBottom })
+        {
+            auto reverseDirection = GetReverseDirection(direction);
+            auto cellA = GetExtendedLoopAt(cell, RotateDirection(reverseDirection, RotateDegree::Counterclockwise45), 2);
+            auto cellB = GetExtendedLoopAt(cell, RotateDirection(reverseDirection, RotateDegree::Clockwise45), 2);
+            if (cellA->State != GridItemState::None && cellB->State != GridItemState::None)
+            {
+                bool sameColor = cellA->State == cellB->State;
+                auto state = cellA->State;
+                auto nextCell = cell;
+                do
+                {
+                    cellA = GetExtendedLoopAt(nextCell, RotateDirection(direction, RotateDegree::Counterclockwise45), 2);
+                    cellB = GetExtendedLoopAt(nextCell, RotateDirection(direction, RotateDegree::Clockwise45), 2);
+                    if (sameColor)
+                    {
+                        state = GetReverseState(state);
+                        SetState(cellA, state);
+                        SetState(cellB, state);
+                    }
+                    else
+                    {
+                        SetState(cellA, GetReverseState(cellB->State));
+                        SetState(cellB, GetReverseState(cellA->State));
+                    }
+                    nextCell = GetExtendedLoopAt(nextCell, direction, 2);
+                } while (nextCell->Degree == 2);
+            }
         }
     }
 }
