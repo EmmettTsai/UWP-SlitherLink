@@ -136,5 +136,6 @@ namespace SlitherLink
         void ClearRecursiveFlag();
         void SolveButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void ApplySolvedResult();
+        void ResetGame();
     };
 }

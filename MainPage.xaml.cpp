@@ -1409,6 +1409,12 @@ void SlitherLink::MainPage::ResetToLockedButton_Click(Platform::Object^ sender, 
 
 void SlitherLink::MainPage::ResetGameButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
+    ResetGame();
+}
+
+
+void SlitherLink::MainPage::ResetGame()
+{
     for (int i = mRowStart; i <= mRowEnd; i++)
     {
         for (int j = mColStart; j <= mColEnd; j++)
@@ -1711,6 +1717,8 @@ void SlitherLink::MainPage::SolveButton_Click(Platform::Object^ sender, Windows:
     LoadFromUrlButton->IsEnabled = false;
     OpenFileButton->IsEnabled = false;
     mSolving = true;
+    // TODO: without reset game, try based on current state to solve
+    ResetGame();
     create_task(create_async([this]()
     {
         Solver^ solver = ref new Solver(mLoopRowSize, mLoopColSize, mLoopData);

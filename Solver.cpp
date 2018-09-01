@@ -1103,6 +1103,11 @@ void Solver::RuleCycleTestForThree()
 
 void Solver::RuleColorTest()
 {
+    /*
+     * TODO:
+     * improve performance: maintain a collection of uncolored cells which located at
+     * boundary of colored cells to instead of left/top/right/bottom collection
+     */
     for (auto cell : mLeftBorderCellSet)
     {
         switch (GetLeft(cell)->State)
