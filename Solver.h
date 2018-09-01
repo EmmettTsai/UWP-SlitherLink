@@ -126,6 +126,7 @@ namespace SlitherLink
         void UpdateQueue(GridItemInfo^ info);
         void RuleZero();
         void RuleThreeThree();
+        void RuleOneThreeOne(GridItemInfo^ info);
         void RuleCheckSelf(GridItemInfo^ info);
         void RuleCheckCell(GridItemInfo^ info);
         void RuleCheckOne(GridItemInfo^ info);

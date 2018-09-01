@@ -609,6 +609,29 @@ void Solver::RuleThreeThree()
             SetCross(GetExtendedLoopAt(tail, 2, -1));
             SetCross(GetExtendedLoopAt(tail, 1, -2));
         }
+
+        RuleOneThreeOne(head);
+    }
+}
+
+
+void Solver::RuleOneThreeOne(GridItemInfo^ info)
+{
+    for (auto direction : { Direction::LeftTop, Direction::RightTop, Direction::RightBottom, Direction::LeftBottom })
+    {
+        auto directionA = RotateDirection(direction, RotateDegree::Counterclockwise45);
+        auto directionB = RotateDirection(direction, RotateDegree::Clockwise45);
+        auto cellA = GetExtendedLoopAt(info, directionA, 2);
+        auto cellB = GetExtendedLoopAt(info, directionB, 2);
+        if (cellA->Degree == 1 && cellB->Degree == 1)
+        {
+            SetCross(GetExtendedLoopAt(cellA, directionA));
+            SetCross(GetExtendedLoopAt(cellB, directionB));
+            directionA = RotateDirection(directionA, RotateDegree::Counterclockwise90);
+            directionB = RotateDirection(directionB, RotateDegree::Clockwise90);
+            SetCross(GetExtendedLoopAt(cellA, directionA));
+            SetCross(GetExtendedLoopAt(cellB, directionB));
+        }
     }
 }
 
@@ -1356,6 +1379,20 @@ void Solver::RuleColorTest()
                     }
                     nextCell = GetExtendedLoopAt(nextCell, direction, 2);
                 } while (nextCell->Degree == 2);
+            }
+        }
+    }
+
+    for (GridItemInfo^ cell : mGridThree)
+    {
+        for (auto direction : { Direction::Left, Direction::Top, Direction::Right, Direction::Bottom })
+        {
+            auto reverseDirection = GetReverseDirection(direction);
+            auto cellA = GetExtendedLoopAt(cell, RotateDirection(reverseDirection, RotateDegree::Counterclockwise45), 2);
+            auto cellB = GetExtendedLoopAt(cell, RotateDirection(reverseDirection, RotateDegree::Clockwise45), 2);
+            if (cellA->State != GridItemState::None && cellB->State != GridItemState::None && cellA->State != cellB->State)
+            {
+                SetLine(GetExtendedLoopAt(cell, direction));
             }
         }
     }
