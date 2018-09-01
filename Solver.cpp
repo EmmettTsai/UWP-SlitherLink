@@ -770,7 +770,16 @@ void Solver::RuleCheckCell(GridItemInfo^ info)
 
 void Solver::RuleCheckOne(GridItemInfo^ info)
 {
-
+    for (auto direction : { Direction::LeftTop, Direction::RightTop, Direction::RightBottom, Direction::LeftBottom })
+    {
+        auto reverseDirection = GetReverseDirection(direction);
+        auto sideA = GetExtendedLoopAt(info, RotateDirection(reverseDirection, RotateDegree::Counterclockwise45));
+        auto sideB = GetExtendedLoopAt(info, RotateDirection(reverseDirection, RotateDegree::Clockwise45));
+        if (sideA->State == GridItemState::Cross && sideB->State == GridItemState::Cross)
+        {
+            RuleSetCornerDifferentState(info, direction);
+        }
+    }
 }
 
 
