@@ -825,6 +825,24 @@ void Solver::RuleCheckThree(GridItemInfo^ info)
             RuleSetCornerDifferentState(info, direction);
         }
     }
+
+    for (auto direction : { Direction::Left, Direction::Top, Direction::Right, Direction::Bottom })
+    {
+        auto next = GetExtendedLoopAt(info, direction, 2);
+        if (next->Degree == 1)
+        {
+            auto side = GetExtendedLoopAt(info, direction);
+            for (auto rotate45 : { RotateDegree::Counterclockwise45, RotateDegree::Clockwise45 })
+            {
+                auto directionRotate90 = RotateDirection(direction, rotate45, 2);
+                if (GetExtendedLoopAt(side, directionRotate90, 2)->State == GridItemState::Cross)
+                {
+                    auto cell = GetExtendedLoopAt(info, directionRotate90, 2);
+                    RuleSetCornerDifferentState(cell, RotateDirection(direction, rotate45, 7));
+                }
+            }
+        }
+    }
 }
 
 
@@ -968,9 +986,9 @@ void Solver::RuleSetCornerDifferentState(GridItemInfo^ info, Direction direction
 }
 
 
-Direction Solver::RotateDirection(Direction direction, RotateDegree rotateDegree)
+Direction Solver::RotateDirection(Direction direction, RotateDegree rotateDegree, int scale)
 {
-    return (Direction)(((int)direction + (int)rotateDegree) % (int)Direction::Count);
+    return (Direction)(((int)direction + (int)rotateDegree * scale) % (int)Direction::Count);
 }
 
 
