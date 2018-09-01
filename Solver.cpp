@@ -403,6 +403,33 @@ void Solver::UpdateQueue(GridItemInfo^ info)
 }
 
 
+void Solver::UpdateColorBoundary(GridItemInfo^ info)
+{
+    if (info->IsColorBoundary)
+    {
+        info->IsColorBoundary = false;
+        unsigned int index;
+        if (mColorBoundarySet->IndexOf(info, &index))
+        {
+            mColorBoundarySet->RemoveAt(index);
+        }
+    }
+    for (auto direction : { Direction::Left, Direction::Top, Direction::Right, Direction::Bottom })
+    {
+        auto side = GetExtendedLoopAt(info, direction);
+        if (side->State == GridItemState::None)
+        {
+            auto cell = GetExtendedLoopAt(info, direction, 2);
+            if (cell->State == GridItemState::None)
+            {
+                cell->IsColorBoundary = true;
+                mColorBoundarySet->Append(cell);
+            }
+        }
+    }
+}
+
+
 bool Solver::SetLine(GridItemInfo^ info)
 {
     if (info->IsExtended)
@@ -481,6 +508,7 @@ bool Solver::SetInside(GridItemInfo^ info)
     else if (info->State == GridItemState::None)
     {
         info->State = GridItemState::InSide;
+        UpdateColorBoundary(info);
 #if USE_DELEGATE
         UpdateMainView(info, info->State);
 #endif
@@ -502,6 +530,7 @@ bool Solver::SetOutside(GridItemInfo^ info)
     else if (info->State == GridItemState::None)
     {
         info->State = GridItemState::OutSide;
+        UpdateColorBoundary(info);
 #if USE_DELEGATE
         UpdateMainView(info, info->State);
 #endif
@@ -1273,7 +1302,7 @@ void Solver::RuleColorTest()
                 {
                     for (auto noneDirection : noneDirectionSet)
                     {
-                        SetOutside(GetExtendedLoopAt(info, noneDirection, 2));
+                        SetCellStateRecursive(GetExtendedLoopAt(info, noneDirection, 2), GridItemState::OutSide);
                     }
                 }
             }
@@ -1305,7 +1334,7 @@ void Solver::RuleColorTest()
                 {
                     for (auto noneDirection : noneDirectionSet)
                     {
-                        SetInside(GetExtendedLoopAt(info, noneDirection, 2));
+                        SetCellStateRecursive(GetExtendedLoopAt(info, noneDirection, 2), GridItemState::InSide);
                     }
                 }
             }
@@ -1349,13 +1378,13 @@ void Solver::RuleColorTest()
                     if (sameColor)
                     {
                         state = GetReverseState(state);
-                        SetState(cellA, state);
-                        SetState(cellB, state);
+                        SetCellStateRecursive(cellA, state);
+                        SetCellStateRecursive(cellB, state);
                     }
                     else
                     {
-                        SetState(cellA, GetReverseState(cellB->State));
-                        SetState(cellB, GetReverseState(cellA->State));
+                        SetCellStateRecursive(cellA, GetReverseState(cellB->State));
+                        SetCellStateRecursive(cellB, GetReverseState(cellA->State));
                     }
                     nextCell = GetExtendedLoopAt(nextCell, direction, 2);
                 } while (nextCell->Degree == 2);
@@ -1381,6 +1410,10 @@ void Solver::RuleColorTest()
 
 void Solver::SetCellStateRecursive(GridItemInfo^ info, GridItemState state)
 {
+    if (state == GridItemState::None || info->State != GridItemState::None)
+    {
+        return;
+    }
     auto stack = ref new Vector<GridItemInfo^>();
     SetState(info, state);
     stack->Append(info);

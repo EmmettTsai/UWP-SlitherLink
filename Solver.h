@@ -120,6 +120,7 @@ namespace SlitherLink
         void SetCellStateRecursive(GridItemInfo^ info, GridItemState state);
 
         void UpdateQueue(GridItemInfo^ info);
+        void UpdateColorBoundary(GridItemInfo^ info);
         void RuleZero();
         void RuleThreeThree();
         void RuleOneThreeOne(GridItemInfo^ info);
