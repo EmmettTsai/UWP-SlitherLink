@@ -168,6 +168,7 @@ namespace SlitherLink
                 m_solverState = solverState;
             }
         }
+        property bool IsColorBoundary;
     private:
         GridItemType m_type;
         GridItemState m_state;

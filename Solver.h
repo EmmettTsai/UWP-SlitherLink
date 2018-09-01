@@ -88,10 +88,7 @@ namespace SlitherLink
 
         Windows::Foundation::Collections::IVector<GridItemInfo^>^ mQueue;
         Windows::Foundation::Collections::IVector<GridItemInfo^>^ mDotSet;
-        Windows::Foundation::Collections::IVector<GridItemInfo^>^ mLeftBorderCellSet;
-        Windows::Foundation::Collections::IVector<GridItemInfo^>^ mTopBorderCellSet;
-        Windows::Foundation::Collections::IVector<GridItemInfo^>^ mRightBorderCellSet;
-        Windows::Foundation::Collections::IVector<GridItemInfo^>^ mBottomBorderCellSet;
+        Windows::Foundation::Collections::IVector<GridItemInfo^>^ mColorBoundarySet;
 
         inline int Solver::GetDataAt(int i, int j);
         inline GridItemInfo^ GetExtendedLoopAt(int i, int j);
@@ -120,7 +117,6 @@ namespace SlitherLink
         Direction GetReverseDirection(Direction direction);
         Direction RotateDirection(Direction direction, RotateDegree rotateDegree, int scale = 1);
 
-        void ClearRecursiveFlag();
         void SetCellStateRecursive(GridItemInfo^ info, GridItemState state);
 
         void UpdateQueue(GridItemInfo^ info);
