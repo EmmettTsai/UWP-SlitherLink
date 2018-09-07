@@ -405,6 +405,7 @@ void Solver::UpdateQueue(GridItemInfo^ info)
 
 void Solver::UpdateColorBoundary(GridItemInfo^ info)
 {
+    mUpdated = true;
     if (info->IsColorBoundary)
     {
         info->IsColorBoundary = false;
@@ -864,6 +865,18 @@ void Solver::RuleCheckThree(GridItemInfo^ info)
                 {
                     auto cell = GetExtendedLoopAt(info, directionRotate90, 2);
                     RuleSetCornerDifferentState(cell, RotateDirection(direction, rotate45, 7));
+                }
+            }
+        }
+        else if (next->Degree == 2)
+        {
+            auto reverseDirection = GetReverseDirection(direction);
+            auto side = GetExtendedLoopAt(info, reverseDirection);
+            if (side->State == GridItemState::None)
+            {
+                if (GetExtendedLoopAt(next, direction)->State == GridItemState::Cross)
+                {
+                    SetLine(side);
                 }
             }
         }
@@ -1365,6 +1378,36 @@ void Solver::RuleColorTest()
             outsideDirectionSet->Clear();
             noneDirectionSet->Clear();
             i++;
+        }
+    }
+
+    for (auto set : { mGridOne, mGridThree })
+    {
+        if (set->Size == 0)
+        {
+            continue;
+        }
+        unsigned int i = 0;
+        int setDegree = set->GetAt(0)->Degree;
+        for (auto cell : set)
+        {
+            for (auto direction : { Direction::Left, Direction::Top })
+            {
+                auto reverseDirection = GetReverseDirection(direction);
+                GridItemInfo^ sideA = GetExtendedLoopAt(cell, direction);
+                GridItemInfo^ sideB = GetExtendedLoopAt(cell, reverseDirection);
+                if (sideA->State == sideB->State)
+                {
+                    if ((setDegree == 1 && sideA->State == GridItemState::Cross)
+                        || (setDegree == 3 && sideA->State == GridItemState::Line))
+                    {
+                        GridItemInfo^ cellA = GetExtendedLoopAt(cell, RotateDirection(direction, RotateDegree::Counterclockwise90), 2);
+                        GridItemInfo^ cellB = GetExtendedLoopAt(cell, RotateDirection(direction, RotateDegree::Clockwise90), 2);
+                        SetState(cellA, GetReverseState(cellB->State));
+                        SetState(cellB, GetReverseState(cellA->State));
+                    }
+                }
+            }
         }
     }
 
