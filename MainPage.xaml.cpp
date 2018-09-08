@@ -1483,6 +1483,10 @@ void SlitherLink::MainPage::MergeSlotButton_Click(Platform::Object^ sender, Wind
             {
                 continue;
             }
+            if (info->IsLocked)
+            {
+                continue;
+            }
             auto view = info->View;
             if (info->StateSlotA == info->StateSlotB && info->StateSlotA != GridItemState::None)
             {
@@ -1513,7 +1517,7 @@ void SlitherLink::MainPage::MergeSlotButton_Click(Platform::Object^ sender, Wind
                     break;
                 }
             }
-            else
+            else if (info->StateSlotA != GridItemState::None || info->StateSlotB != GridItemState::None)
             {
                 SetErase(view, true);
             }
