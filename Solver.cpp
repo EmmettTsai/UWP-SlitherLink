@@ -1416,6 +1416,22 @@ void Solver::RuleColorTest()
         for (auto direction : { Direction::LeftTop, Direction::RightTop, Direction::RightBottom, Direction::LeftBottom })
         {
             auto reverseDirection = GetReverseDirection(direction);
+
+            auto nextCell = GetExtendedLoopAt(cell, direction, 2);
+            if (cell->State != GridItemState::None && cell->State == nextCell->State)
+            {
+                auto sideA = GetExtendedLoopAt(cell, RotateDirection(reverseDirection, RotateDegree::Counterclockwise45));
+                auto sideB = GetExtendedLoopAt(cell, RotateDirection(reverseDirection, RotateDegree::Clockwise45));
+                if (sideA->State == GridItemState::Cross)
+                {
+                    SetLine(sideB);
+                }
+                else if (sideB->State == GridItemState::Cross)
+                {
+                    SetLine(sideA);
+                }
+            }
+
             bool sameColor;
             GridItemState state;
             GridItemInfo^ cellA = GetExtendedLoopAt(cell, RotateDirection(reverseDirection, RotateDegree::Counterclockwise45), 2);
@@ -1450,7 +1466,7 @@ void Solver::RuleColorTest()
                     }
                 }
             }
-            auto nextCell = cell;
+            nextCell = cell;
             do
             {
                 cellA = GetExtendedLoopAt(nextCell, RotateDirection(direction, RotateDegree::Counterclockwise45), 2);
