@@ -1721,17 +1721,19 @@ void SlitherLink::MainPage::SolveButton_Click(Platform::Object^ sender, Windows:
     LoadFromUrlButton->IsEnabled = false;
     OpenFileButton->IsEnabled = false;
     mSolving = true;
-    // TODO: without reset game, try based on current state to solve
-    ResetGame();
+    if (!mSolveBaseOnCurrentState)
+    {
+        ResetGame();
+    }
     create_task(create_async([this]()
     {
         Solver^ solver = ref new Solver(mLoopRowSize, mLoopColSize, mLoopData);
+        solver->SetMainExtendedLoop(mExtendedLoop);
 #if USE_DELEGATE
         solver->SetMainDispatcher(this->Dispatcher);
         solver->OnSetState += ref new SlitherLink::SetStateHandler(this, &SlitherLink::MainPage::SetState);
-        solver->SetMainExtendedLoop(mExtendedLoop);
 #endif
-        mSolvedResult = solver->Solve();
+        mSolvedResult = solver->Solve(true);
         myLogW(LOG_DEBUG, LTAG L"mSolvedResult: %s", mSolvedResult->Data());
         this->Dispatcher->RunAsync(CoreDispatcherPriority::Normal, ref new DispatchedHandler([this]()
         {
@@ -1792,4 +1794,16 @@ void SlitherLink::MainPage::ApplySolvedResult()
         }
     }
 
+}
+
+
+void SlitherLink::MainPage::SolveBaseOnCurrentStateCheckBox_Checked(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+{
+    mSolveBaseOnCurrentState = true;
+}
+
+
+void SlitherLink::MainPage::SolveBaseOnCurrentStateCheckBox_Unchecked(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
+{
+    mSolveBaseOnCurrentState = false;
 }

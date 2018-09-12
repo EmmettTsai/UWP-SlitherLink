@@ -34,14 +34,6 @@ Solver::Solver(int row, int col, String^ data)
     mDotSet = ref new Vector<GridItemInfo^>();
     mColorBoundarySet = ref new Vector<GridItemInfo^>();
     myLogW(LOG_DEBUG, LTAG L"[%d][%s] mData->Length = %d, mData = %s", __LINE__, __funcw__, mData->Length(), mData->Data());
-    InitExtendedLoop();
-}
-
-
-#if USE_DELEGATE
-void Solver::SetMainDispatcher(CoreDispatcher^ dispatcher)
-{
-    mMainDispatcher = dispatcher;
 }
 
 
@@ -50,6 +42,12 @@ void Solver::SetMainExtendedLoop(IVector<GridItemInfo^>^ mainExtendedLoop)
     mMainExtendedLoop = mainExtendedLoop;
 }
 
+
+#if USE_DELEGATE
+void Solver::SetMainDispatcher(CoreDispatcher^ dispatcher)
+{
+    mMainDispatcher = dispatcher;
+}
 
 void Solver::UpdateMainView(GridItemInfo^ info, GridItemState state)
 {
@@ -259,6 +257,85 @@ void Solver::InitExtendedLoop()
 }
 
 
+void Solver::InitFromMainExtendedLoop()
+{
+    for (auto mainInfo : mMainExtendedLoop)
+    {
+        GridItemInfo^ info = ref new GridItemInfo();
+        info->Row = mainInfo->Row;
+        info->Column = mainInfo->Column;
+        info->State = mainInfo->State;
+        info->IsExtended = mainInfo->IsExtended;
+        info->Handled = false;
+        info->IsColorBoundary = false;
+        info->Type = mainInfo->Type;
+        if (info->Type == GridItemType::Cell)
+        {
+            info->Degree = mainInfo->Degree;
+            switch (info->Degree)
+            {
+            case 0:
+                mGridZero->Append(info);
+                break;
+            case 1:
+                mGridOne->Append(info);
+                break;
+            case 2:
+                mGridTwo->Append(info);
+                break;
+            case 3:
+                mGridThree->Append(info);
+                break;
+            default:
+                if (!info->IsExtended)
+                {
+                    mGridUnknown->Append(info);
+                }
+            }
+        }
+        else
+        {
+            info->Degree = 0;
+        }
+        mExtendedLoop->Append(info);
+    }
+
+    for (int i = mRowStart; i <= mRowEnd; i++)
+    {
+        for (int j = mColStart; j <= mColEnd; j++)
+        {
+            auto info = GetExtendedLoopAt(i, j);
+            if (info->Type == GridItemType::Dot)
+            {
+                for (auto direction : { Direction::Left, Direction::Top, Direction::Right, Direction::Bottom })
+                {
+                    if (GetExtendedLoopAt(info, direction)->State == GridItemState::Line)
+                    {
+                        info->Degree++;
+                    }
+                }
+                if (info->Degree == 1)
+                {
+                    mDotSet->Append(info);
+                }
+            }
+            else if (info->Type == GridItemType::Cell && info->State == GridItemState::None)
+            {
+                for (auto direction : { Direction::Left, Direction::Top, Direction::Right, Direction::Bottom })
+                {
+                    if (GetExtendedLoopAt(info, direction, 2)->State != GridItemState::None)
+                    {
+                        info->IsColorBoundary = true;
+                        mColorBoundarySet->Append(info);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+}
+
+
 Platform::String^ Solver::GetResult()
 {
     String^ result = L"";
@@ -287,8 +364,17 @@ Platform::String^ Solver::GetResult()
 }
 
 
-String^ Solver::Solve()
+String^ Solver::Solve(bool baseOnCurrentState)
 {
+    if (baseOnCurrentState && mMainExtendedLoop != nullptr)
+    {
+        InitFromMainExtendedLoop();
+    }
+    else
+    {
+        InitExtendedLoop();
+    }
+
     RuleZero();
     RuleThreeThree();
 

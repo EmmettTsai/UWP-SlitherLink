@@ -63,6 +63,7 @@ namespace SlitherLink
         int mExtendedColSize;
         Platform::String^ mSolvedResult;
         bool mSolving = false;
+        bool mSolveBaseOnCurrentState = false;
 
         void InitView();
         void Init(int row, int col);
@@ -137,5 +138,7 @@ namespace SlitherLink
         void SolveButton_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void ApplySolvedResult();
         void ResetGame();
+        void SolveBaseOnCurrentStateCheckBox_Checked(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+        void SolveBaseOnCurrentStateCheckBox_Unchecked(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
     };
 }

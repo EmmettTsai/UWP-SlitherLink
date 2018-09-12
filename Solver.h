@@ -4,6 +4,14 @@
 
 namespace SlitherLink
 {
+    /*
+     * TODO: implement handle invalid result
+     * ex:
+     *   dot has degree > 2
+     *   more than one loop
+     *   false result on SetLine, SetCross, SetInside, SetOutside
+     *   etc...
+     */
     public enum class Result : int
     {
         Invalid,
@@ -52,10 +60,10 @@ namespace SlitherLink
     {
     public:
         Solver(int row, int col, Platform::String^ data);
-        Platform::String^ Solve();
+        Platform::String^ Solve(bool baseOnCurrentState);
+        void SetMainExtendedLoop(Windows::Foundation::Collections::IVector<GridItemInfo^>^ mainExtendedLoop);
 #if USE_DELEGATE
         void SetMainDispatcher(Windows::UI::Core::CoreDispatcher^ dispatcher);
-        void SetMainExtendedLoop(Windows::Foundation::Collections::IVector<GridItemInfo^>^ mainExtendedLoop);
         event SetStateHandler^ OnSetState;
 #endif
 
@@ -96,6 +104,7 @@ namespace SlitherLink
         inline GridItemInfo^ GetExtendedLoopAt(GridItemInfo^ info, Direction direction, int scale = 1);
         inline GridItemInfo^ Solver::GetMainExtendedLoopAt(int i, int j);
         void InitExtendedLoop();
+        void InitFromMainExtendedLoop();
 
         Platform::String^ GetResult();
 
