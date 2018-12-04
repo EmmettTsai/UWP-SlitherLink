@@ -529,31 +529,50 @@ bool Solver::SetLine(GridItemInfo^ info)
     }
     else if (info->State == GridItemState::None)
     {
+        switch (info->Type)
+        {
+        case GridItemType::HorizontailLine:
+            {
+                auto vertexA = GetLeft(info);
+                auto vertexB = GetRight(info);
+                if (vertexA->Degree > 1 || vertexB->Degree > 1)
+                {
+                    return false;
+                }
+                if (++vertexA->Degree == 1)
+                {
+                    mDotSet->Append(vertexA);
+                }
+                if (++vertexB->Degree == 1)
+                {
+                    mDotSet->Append(vertexB);
+                }
+                break;
+            }
+        case GridItemType::VerticalLine:
+            {
+                auto vertexA = GetTop(info);
+                auto vertexB = GetBottom(info);
+                if (vertexA->Degree > 1 || vertexB->Degree > 1)
+                {
+                    return false;
+                }
+                if (++vertexA->Degree == 1)
+                {
+                    mDotSet->Append(vertexA);
+                }
+                if (++vertexB->Degree == 1)
+                {
+                    mDotSet->Append(vertexB);
+                }
+                break;
+            }
+        }
+
         info->State = GridItemState::Line;
 #if USE_DELEGATE
         UpdateMainView(info, info->State);
 #endif
-        switch (info->Type)
-        {
-        case GridItemType::HorizontailLine:
-            for (auto vertex : { GetLeft(info), GetRight(info) })
-            {
-                if (++vertex->Degree == 1)
-                {
-                    mDotSet->Append(vertex);
-                }
-            }
-            break;
-        case GridItemType::VerticalLine:
-            for (auto vertex : { GetTop(info), GetBottom(info) })
-            {
-                if (++vertex->Degree == 1)
-                {
-                    mDotSet->Append(vertex);
-                }
-            }
-            break;
-        }
         UpdateQueue(info);
     }
     return true;
